@@ -1,0 +1,14 @@
+- shift (up, over, etc) to highlight
+- ctr-k to cut
+- ctr-y to paste
+- ctr-/ to undo
+- ctr-x 1 to kill all but one window
+- ctr-g to kill whatever emacs command you typed before execution
+
+- ctr-c ctr-e to compile a part of the code
+- ctr-x u undo
+- ctr-x ctr-x to save to current file
+- M-p to repeat a previous command in utop
+
+- ctr-x o to switch to another plane
+- ctr-x 3 to split vertically, then run buffer

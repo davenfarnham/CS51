@@ -1,0 +1,121 @@
+Algebraic Data Types:
+
+    All this basically means is that in Ocaml, you can create your own datatypes. For example, let's say I wanted to
+    create a datatype for students, I could do something like: 
+
+  	 type house = Mather | Eliot | Winthrop | Pforzheimer | Cabot | Currier | Kirkland | Leverett | Adams | Lowell 
+	      	      	     | Quincy | Dunster | Other of string
+  	 type student = Name of string | House of house | Age of int
+
+    I now have new datatypes I can use just like I did with string, int, float, bool, etc. When we can create our own datatypes,
+    we can pretty much define anything. You can think of this kind of like '#define' values or structs in C. I can say something 
+    like:
+
+   	 #define house Mather;
+
+	 typedef struct house {
+	 	 char* s;
+	 } house;		// these are both different than types in Ocaml, but similar to using basic datatypes to define new values
+
+
+	examples:
+     let elana = [Name "Elana"; House (Other "Grays"); Age 19];; (* this is ok, everything in the list is of type student *)
+	 let rob = [Name "Rob"; House Kirkland; Age 23];;
+	
+	
+Polymorphism:
+
+    A very important idea. Basically, if you can write a function for one kind of datatype, why not write it for multiple?
+    We've all seen functional declarations that use int, float, string, etc. These define, specifically, what the function can 
+    be used on. If, instead, we use general declarations like 'a, 'b, etc, then it doesn't matter if the function takes an 
+    int or a float, it's covered by the generality of the definition. For example:
+    
+    let rec length (lst : int list) : int = 
+        match lst with
+        | [] -> 0
+        | _ :: tl -> 1 + length tl;; (* awesome, this works. But what if I want to find the length of a list of floats? *)
+        
+    let rec length' (lst : float list) : int =
+        match lst with
+        | [] -> 0
+        | _ :: tl -> 1 + length' tl;; (* these functions are the same aside from their parameters *)
+        
+    (* let's write a function that takes any kind of input *)
+    let rec length_ (lst : 'a list) : int = 
+        match lst with
+        | [] -> 0
+        | _ :: tl -> 1 + length_ tl;; (* this will work with floats, strings, ints, etc *)
+        
+    This is a powerful way to save time and code - you'll see it everywhere . For example, in utop type "List.fold_right;;"
+    to see the fold_right function in the List module. See lots of 'as & 'bs, right?
+    
+    I can't just make anything a 'a or 'b, though. For example, in List.fold_right why is the return value a 'b and not a 'a?
+
+    Think about what fold_right does. If I have a list of floats, say [1.;2.;3.] and I'm trying to find the length of the list
+    using fold_right (passing in (fun x y -> 1 + y) as the function), this will become: (f 1 (f 1 (f 1 0))). The type, therefore, 
+    isn't dependent on the type of the list, but rather, the type of the initializer (init). 
+
+    It's always good to be as general as possible when writing functions. 
+        
+        
+Higher-Order functions
+
+	     A higher-order function is simply a function that takes another function as a parameter. You'll see this a lot with
+	     the List functions. For example, if I want to sum all the numbers in a list, what function would I pass to List.fold_right?
+	     
+	            List.fold_right ~f:(fun x y -> x + y) ~init:0 [1;2;3];; (* will return 6 *)
+	     
+	     I don't need to name the function. Instead, I simply pass in an anonymous function marked by the "fun" prefix. Of course, I could
+	     do something like this:
+	     
+	            List.fold_right ~f:(+) ~init:0 [1;2;3];;
+	            
+	            or
+	     
+	            let sum x y = x + y;;
+	            
+	            List.fold_right ~f:(sum) ~init:0 [1;2;3];;
+	            
+         but in most cases it's simply easier to use an anonymous function.
+	     
+	     Note that the definitions of the List functions are such that they need "flags". If you were to
+	     write: 
+
+	     	    List.fold_right (fun x y -> 1 + y) 0 [1;2;3];; (* what does this anonymous function do? *)
+
+	     you'll get an error. You need to identify the function with "~f:" and the initializer with "~init:". This clearly
+	     specifies what is what and allows the order of the parameters to differ from the set functional declaration. This
+	     will type check:
+
+	     	    List.fold_right ~init:0 ~f:(fun x y -> 1 + y) [1;2;3];; (* will return 3 *)
+
+	What does fold_right look like? The function to fold_right is going to take how many parameters? -> 2. It's always going to take
+	2 parameters. What's confusing is that you're breaking up the list one at a time. So, let's say I give you the simplest list possible, 
+	one of length 1. let lst = [2];; I told you that the function you're passing into fold_right WILL take two parameters, so where is the
+	other parameter coming from? Well it's going to come from the initializer. If we have ~f:(fun x y -> x + y) -> f 2 0 -> fun 2 0 -> 2 + 0 -> 2;;
+	Let lst = [1;2];; (f 1 (f 2 0)) -> (f 1 (2)) -> fun 1 2 -> 1 + 2 -> 3;;
+	
+	length:
+
+	(fun x y -> 1 + y) 
+	     (f 1 (f 2 0)) -> 2 goes to x, but you don't use it -> (f 1 1) -> 2
+
+	(fun x y -> x + 1) 
+	     (f 1 (f 2 0)) - > (f 1 3) -> you don't use 3 since it goes to y -> (f 1 1) -> 2  
+
+Currying
+
+    For now, just think of currying as the ability of a function to consume parameters one at a time. The add function, for example, 
+    has a type declaration of "int -> int -> int". If I call add 3, what's the declaration of this? It's int -> int since it is still waiting
+    for another input. ((add 3) 4) will finally return 7;; 
+    
+    All functions in Ocaml can do this - you can give them all or none of their parameters.
+    
+        List.fold_right:
+        
+            'a list -> f:('a -> 'b -> 'b) -> init: 'b -> 'b
+
+        List.fold_right [1;2;3]:
+
+            f:(int -> 'b -> 'b) -> init: 'b -> 'b (* we now know what is in the list, so we can replace 'a by int *)
+                                                  (* we still don't know what the initializer is, tho, so 'b *)

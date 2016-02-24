@@ -1,0 +1,18 @@
+(* OPAM stuff *)
+let () =
+  try Topdirs.dir_directory (Sys.getenv "OCAML_TOPLEVEL_PATH")
+  with Not_found -> ()
+;;
+
+#use "topfind";;
+#thread;;
+#camlp4o;;
+#require "core.top";;
+#require "core.syntax";;
+open Core.Std
+
+(* PS2 Stuff *)
+module Ast = struct end
+module ExpressionLibrary = struct end
+#use "ast.ml"
+#use "expressionLibrary.ml"
