@@ -1,0 +1,82 @@
+(1) Modules:
+
+            I know I keep saying in section that things are like structs, but this time I REALLY mean it. Modules are collections of functions or types that define
+            an overarching concept. For example, let's say I want to create a module for a Harvard student. It might look something like this:
+            
+            open Core.Std
+
+            module HStudent =
+            struct
+                (* name *)
+                type t = string
+                
+                (* classes *)
+                type 'a t' = 'a list
+
+                (* exception *)
+                exception Crazy of string
+            
+                (* identity *)
+                let me : t = "Elana"
+                
+                (* zero classes *)
+                let schedule : 'a t' = []
+                
+                (* check number of classes *)
+                let number (num : 'a t') : int = 
+                    List.fold_right ~f:(fun x y -> 1 + y) ~init:0 num            
+                ;;
+            
+                (* add a class *)
+                let add_class (sch : 'a t') (c : 'a) : 'a t' = 
+                    if (number (sch) > 3) then (raise (Crazy "stahp"))
+                    else (c :: sch)
+                ;; 
+
+                (* drop a class *)
+                let drop_class (sch : 'a t') (c : 'a) : bool = 
+                    if (number (sch) < 5) then (raise (Crazy "lazy")) else
+                    let rec drop s' c' : bool=
+                        match s' with
+                        | [] -> false
+                        | hd :: tl ->  (if hd = c' then true else (drop tl c')) 
+		            in drop sch c
+		    ;; 
+            end
+    
+            In this, I've defined what a student is as well as a number of functions pertinent to students. I've packaged things together. If I had a Yale student,
+            I could make a separate module for him with similar functions - there won't be any overlap, though, since to access a module's functions
+            you have to use dot notation, "HStudent.add_class" for example. In this way, we declutter the namespace; each module has its own set of functions that 
+            might have the same name, but each is specific to its particular module.
+        
+
+(2) Signature (* modules are implemented signatures just as values are implemented types *)
+
+            So, with modules we've packaged things together into coherent groups, but we've yet to actually introduce any abstraction. As a programmer, I can see
+            how a particular module is implemented, and then, instead of using the functions and types within a module, I can use my own. To add a class, for instance,
+            instead of using HStudent.add_class() I can instead just take a string s and concat it onto HStudent.schedule. 
+             
+            When I seal things in a signature, it's basically hiding the implementation details. So, if I try to refer to a type in a module that is sealed by a 
+            signature, I can only do so through the abstracted type in the signature. You can think of it like this: Ocaml can see the signature, but not the actual
+            module, so it doesn't know, for example, that a stack is actually a list. A module that renames a list as a stack and is not sealed in a signature
+            can be used interchangeably with a list. Sealed, however, Ocaml will only see a stack as "t" and won't know that it's analogous to a list. 
+
+
+(*) Ben's section
+
+    -> go over what a queue and stack are
+    
+        -> two functions named put and two named take 
+        
+            -> we used modules, which fix the namespace issue (types inside modules are just given the name t). Modules don't, however, hide the implementation
+               details, which means Ocaml can just treat both modules as dealing with lists. Modules haven't introduced the absraction barrier. What is the
+               abstraction barrier?
+               
+               -> Signatures (sort of like interfaces). Basically, they just define the functions we expect a module to implement. Any module that matches a signature
+                  must have these things in it. Signatures are what we expose to the client - but you don't know how theyt are implemented. You aren't specifying what
+                  'a t is (not a list)
+                  
+                  
+               -> 
+
+                

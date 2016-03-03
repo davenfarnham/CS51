@@ -1,0 +1,223 @@
+There are basically 4 things you should feel comfortable with after today's section:
+
+                                                                (1) Modules
+                                                                (2) Signatures
+                                                                (3) Functors
+                                                                (4) Tree data structures such as a Binary Heap
+                                                                
+(1) In the pset, you'll use modules to create safe, robust data structures, in particular, a priority queue with a binary heap. So what's a queue?
+
+        - A queue is a FIFO (first in first out data structure). When you make it priority, though, you extract elements from the queue based on their
+          "priority" which a lot of times is just denoted with a number. A large or small number could denote high priorty - I think in the pset the
+          minimum (smaller) value denotes higher priority. 
+          
+        - A lot of times a priority queue is implemented with a Binary heap. Well, what's a binary heap? A Binary heap is simply a tree data structure
+          based on two invariants (things that won't change): A) It's balanced (all levels of the tree will be filled, except perhaps the last one, filling left -> right)
+          and B) all nodes are either "greater than or equal to" or "less than or equal to" their children, depending on the implementation. So, for example,
+          these are Binary heaps:
+          
+                                    1)                                                  2)
+                                            [20] <- max heap                                     [2]  <- min heap
+                                           /    \                                               /   \
+                                         [5]    [7]                                          [3]     [8]
+                                        /  \                                                /  \     /  \
+                                       [2] [4]                                             [4] [5]  [9] [10]
+
+
+          while these are not (why not?):
+
+                                    3)                                                  4)
+                                            [8] <- doesn't follow invariant A                   [3] < doesn't follow invariant B
+                                           /   \                                               /   \
+                                         [1]   [4]                                           [4]   [2]
+                                        /         \
+                                      [0]         [3]
+
+
+        - The invariants in the pset state something slightly differernt from traditional Binary heaps. Here, we are dealing with min Binary heaps, meaning the 
+          root of the tree will be the smallest value. Popping of the queue, then, is simply removing this top element. There is an ODD and EVEN invariant, however, 
+          where ODD = left tree has + 1 node and EVEN sizeof(left tree) == sizeof (right tree). In a tree like this:
+          
+                                                                    [2]     <- Odd
+                                                                   /   \
+                                                      Even ->   [6]     [10]  < Odd
+                                                               /  \     /  
+                                                              [8]  [9] [11]
+
+          taking from the priotiy queue means popping off the root. I then have to replace the root node with the next smallest element:
+
+                                                                    [6]     <- Even    ---
+                                                                   /   \                 |
+                                                       Odd ->   [8]     [10]  <- Odd     | <- Bad. This doesn't follow the weak invariant that both trees have
+                                                                  \    /                 |    the same # of nodes or left = right + 1 (right tree can't have more).
+                                                                  [9][11]                |
+                                                                                       ---
+
+
+                                                                    [6]     <- Even
+                                                                   /   \
+                                                       Odd ->   [8]     [10]  <- Odd
+                                                               /       /  
+                                                              [9]    [11]
+
+        - what is a balanced tree? All subtrees differ in height by <= 1. This is not:
+
+                                                                    [6]     
+                                                                   /   \
+                                                                [8]     [10]  < - left subtree height 2, right subtree hieght 0
+                                                               /       /  
+                                                              [9]    [11]
+                                                                     /
+                                                                   [12]
+
+
+        - Why even use a heap? Trees are, in general, fast. If we have an ordered tree, we are going to be able add() and take() in log(n) time, which far exceeds
+          the asymptotic complexity associated with a list .
+
+(2) Modules (solving the Namespace problem)
+
+        - Modules are very simple; they group common functions and types within a wrapper to solve the namespace issue. In the section notes, for example, we have
+          functions to put() and take() for both queues and stacks. These functions are the same, however, they're implemented slightly different due to the LIFO nature
+          of stacks and the FIFO nature of queues. To maintain both these function names, we wrap them in modules. I can then have Stack.put and Queue.put - both
+          functions have the same name, it is their modules that denote their difference.
+
+        Use format: 
+                    module "Module" = 
+                        struct
+                        
+                                type t
+                                let exp
+                                let exp
+                        
+                        end
+
+(3) Signatures (introducing the abstraction barrier)
+
+        - This has done nothing to prevent me, the client, from doing something stupid. Modules just group things together, they don't hide any of the implementation
+          details from me. So, since I know both stacks and queues actually just use lists, I can treat them equivalently. We need some way to prevent dumb users 
+          like me from using code incorrectly.
+
+        - The answer to this is via signatures. Signatures look like this:
+        
+                    (* It's convention to put the signature in all caps *)
+                    module type SIGNATURE =
+                        sig
+                        
+                                type t
+                                val exp
+                                val exp
+                        
+                        end
+
+        - When a client tries to use a module, now, all they have access to is the signature. Of course Ocaml, and us, the programmers, might know that the underlying
+          structure of a stack is a list, but another user will only know that it is of type 't'. That user, therefore, can't call list operations on 't' since Ocaml
+          knows there is no way for them to know what 't' is. They have to use the functions within the module to do anything. 
+          
+          Let's seal our module with a signature. 
+          
+                    module (Module : SIGNATURE) (* think of this like any other functional declaration: (num : int) -> num is a type of int *)
+                        struct  
+                        
+                            type t
+                            let exp
+                            let exp
+            
+                        end
+
+          If I type "Module.exp" it is going to give me a functional declaration, however all types will be of type "Module.t"
+
+        (* note - if you are sealing a module with a signature, the module must match all the values of the signature *)
+        
+         
+(4) Functors
+
+        - So now we've grouped everything together into similar groups using modules, and then sealed these modules with signatures to introduce the abstraction
+          barrier and prevent users from using the code incorrectly. But what about functors? Functors help us reuse our code. According to its definition, a 
+          functor is a construct that enables modules to be combined by parameterizing in terms of other modules. All this means is a functor is something that
+          takes a module as an arguement (parameter) and returns another module. Let's see a case where you might want to do this.
+
+          (1) Let's say I have a signature for comparing things:
+          
+    open Core.Std
+
+    (* define signature for comparing *)
+    module type COMPARING =
+        sig    
+            (* type of things I'm comparing *)
+            type t 
+            (* actual comparison functions *)
+            val compare : t -> t-> int
+        end
+
+          (2) I can then create modules that implement this signature. 
+
+    (* define a module implementing the above signature for ints but NOT sealed by it*)
+    module IntCompare  =
+        struct
+            type t = int
+            
+            let compare t1 t2 = if t1 > t2 then 1 else if t2 > 1 then -1 else 0;;       
+        end
+
+    (* define a module implementing the above signature for strings AND sealed by it *)
+    module StringCompare : COMPARING  = 
+        struct
+            
+            type t = string
+            
+            let compare t1 t2 = String.compare t1 t2;;
+        
+        end
+
+          (3) Note: I'm not going to be able to look into the StringCompare module. Typing "StringCompare.compare;;" in utop will yield abstraction. I can
+              still look in the IntCompare module, however, since I didn't seal it.
+
+
+          (4) Now let's have a functor that does a lot of things, including comparing things.
+   
+    (* SET is a sig for a module that takes a module that matches the signature COMPARING, and will return a module *)
+    module type SET = 
+      functor (Comparing : COMPARING) -> 
+        sig
+            (* set the element in this signature equal to type 't' in comparing *)
+            type e = Comparing.t (* set 'e' equal to 't'. Since we are setting e equal to something here, if Comparing.t is visible
+                                    e  will also be visible. *)
+            (* this type, however, won't be visible *)
+	        type set
+            (* empty list won't depend on e *)
+            val emp : set
+	    (* add an element to the set *)
+	        val add : e -> set -> set
+            (* take an element from the set *)
+	        val take : set -> (e * set) option
+            (* size*)
+            val size : set -> int
+            (* I can't compare ints and strings in the same way *)
+            val compare : e -> e -> int                        
+        end
+
+    (* Module that matches signature SET, using module Comparing that implements signature COMPARING *)
+    module Set : SET = 
+        functor (Comparing : COMPARING) -> 
+            struct
+                open Comparing
+                
+                type e = t (* If I pass in StringCompare, then e = StringCompare.t; if I pass in IntCompare, e = int *)
+                
+                type set = (e list) (* the list, since it is sealed in the SET signature, is abstracted away *)
+                
+                let emp = [];;
+
+		        let add e s = e :: s;;
+
+		        let take s = match s with
+		             | [] -> None
+			         | hd :: tl -> Some(hd, tl);;	       
+				     
+                let size = (List.length);;
+                
+                let compare t1 t2 = Comparing.compare t1 t2;;            
+            end
+
+            (5) Now, If I do this: "module IntC = Set (IntCompare);;" or this: "module StringC = Set (StringCompare);;" I'm going to get back a module not only 
+                with the contents of COMPARING, but with all the functionality of SET. I've therefore created a module with added functionality from another module.
