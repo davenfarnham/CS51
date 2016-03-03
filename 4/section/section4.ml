@@ -293,7 +293,7 @@ tr = Branch(Branch(Branch(Leaf, 4, Leaf), 3, Leaf), 2, Branch(Branch(Leaf, 6, Le
         -> 5
           -> 6
 
-I'm going to go all the way down the left, then all the way down the left
+I'm going to go all the way down the left, then down the right
 *)
 
 let traverse_bf (tr : tree) : unit =
@@ -341,7 +341,7 @@ module DepthFirstTraversal = Traverse (Stack) (* creating another module *)
 (* We can also apply the functor to the Queue, since it also implements
  * the SCHEDULER signature. What kind of traversal does this give us?
  *)
-module BreadthFirstTraversal = Traverse (Queue)
+module BreadthFirstTraversal = Traverse (Queue) (* will give you bf, but it won't be left to right *)
 
 (* ***** Part 4 - Modules and Functors in the Standard Library **** *)
 (* Now that we have seen how to write our own modules and functors we're

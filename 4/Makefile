@@ -14,4 +14,4 @@ check:
 	../check_width ps4.ml
 
 clean:
-	rm -rf _build *.native
+	rm -rf _build *.native *.ml~
