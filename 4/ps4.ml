@@ -284,7 +284,6 @@ struct
    *
    * The exception "EmptyTree", defined within this module, might come in
    * handy. *)
-
   let getmin (t : tree) : elt = 
     let (e, _) = pull_min t in
       head (List.rev e)
@@ -525,7 +524,7 @@ struct
     | empty -> true
     | _ -> false
 
-  let rec add (e : elt) (q : queue) =
+  let add (e : elt) (q : queue) =
     T.insert e q
 
   let take (q : queue) = 
@@ -655,9 +654,9 @@ struct
    * match in *)
   let get_top (t : tree) : elt = 
     match t with
-    | Leaf -> QueueEmpty
+    | Leaf e -> e
     | OneBranch(e, _) -> e
-    | TwoBranch(_, e, _) -> e
+    | TwoBranch(_, e, _, _) -> e
 
   (* Takes a tree, and if the top node is greater than its children, fixes
    * it. If fixing it results in a subtree where the node is greater than its
