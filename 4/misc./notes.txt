@@ -1,6 +1,26 @@
 Data Structures:
 
-	Two Queues: 
+	Two Queues: A cool implementation of a queue where enqueue/dequeue operations both operate in 
+		    constant time. Unlike normal queues where enqueue usually runs in linear time (since
+		    you have to go to the end of the list to add a new element), if instead you use a record:
+		    
+						queue = {front = []; back = []}
+
+		    where back is a list in reverse, you might get something like this:
+
+						queue = {front = [1;2]; back = [5;4;3]}
+
+		    Adding something onto the queue, then, is constant time (e :: queue.back) while popping
+		    things off is also constant:
+
+						match queue with
+						| {front = hd :: _; back = _} -> hd
+
+		    If front ever equals []:
+
+						match queue with
+						| {front = []; back = tl} -> {front = List.rev tl; back = []}
+
 
 	Binary Search Tree: A tree s.t. given any root node, all nodes to the left are 
 			    less than the root while all nodes to the right are greater.
