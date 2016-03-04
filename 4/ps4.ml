@@ -1,6 +1,6 @@
 (* PS4
- * Author: YOUR NAME HERE
- * Partner: YOUR PARTNER'S NAME HERE
+ * Author: Daven Farnham
+ * Partner: Drake
  *)
 
 (* NOTE: Please read (and understand) all of the comments in this file! 
@@ -184,6 +184,11 @@ struct
   (* Representation of the empty tree *)
   let empty = Leaf
 
+  (* Avoid option returns from List.hd *)
+  let head (lst : 'a list) : 'a = 
+    match lst with
+    | [] -> raise EmptyTree
+    | hd :: _ -> hd
 
 (*>* Problem 2.0 *>*)
 
@@ -196,7 +201,13 @@ struct
    *
    * Hint: use C.compare. See delete for inspiration
    *)
-  let rec insert (x : elt) (t : tree) : tree = raise ImplementMe
+  let rec insert (x : elt) (t : tree) : tree = 
+    match t with 
+    | Leaf -> Branch (Leaf, [x], Leaf)
+    | Branch (l, v, r) -> (match C.compare x (head v) with
+			   | Less ->  Branch (insert x l, v, r)
+			   | Greater -> Branch (l, v, insert x r)
+			   | Equal -> Branch (l, x :: v, r))
 
 (*>* Problem 2.1 *>*)
 
@@ -205,7 +216,14 @@ struct
    * that doesn't necessarily mean that x itself is in the
    * tree.
    *)
-  let rec search (x : elt) (t : tree) : bool = raise ImplementMe
+  let rec search (x : elt) (t : tree) : bool = 
+    match t with
+    | Leaf -> false
+    | Branch (l, v, r) -> (match C.compare x (head v) with
+			   | Less -> search x l
+			   | Greater -> search x r
+			   | Equal -> true)
+
 
   (* A useful function for removing the node with the minimum value from
    * a binary tree, returning that node and the new tree.
@@ -267,13 +285,19 @@ struct
    * The exception "EmptyTree", defined within this module, might come in
    * handy. *)
 
-  let getmin (t : tree) : elt = raise ImplementMe
+  let getmin (t : tree) : elt = 
+    let (e, _) = pull_min t in
+      head (List.rev e)
 
 (*>* Problem 2.3 *>*)
 
   (* Simply returns the maximum value of the tree t. Similarly should
    * return the last element in the matching list. *)
-  let rec getmax (t : tree) : elt = raise ImplementMe
+  let rec getmax (t : tree) : elt = 
+    match t with
+    | Leaf -> raise EmptyTree
+    | Branch (l, v, Leaf) -> head (List.rev v)
+    | Branch (l, v, r) -> getmax r  
 
   let test_insert () =
     let x = C.generate () in
