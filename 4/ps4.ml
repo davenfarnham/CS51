@@ -1,6 +1,6 @@
 (* PS4
  * Author: Daven Farnham
- * Partner: Drake
+ * Partner: 
  *)
 
 (* NOTE: Please read (and understand) all of the comments in this file! 
@@ -454,11 +454,13 @@ struct
   type queue = elt list
 
 (*>* Problem 3.1 *>*)
-  let empty = raise ImplementMe
+  let empty = []
 
 (*>* Problem 3.2 *>*)
-  let is_empty (t : queue) = raise ImplementMe
-
+  let is_empty (t : queue) = 
+    match t with 
+    | [] -> true
+    | _ -> false
 
 (*>* Problem 3.3 *>*)
 
@@ -467,24 +469,43 @@ struct
    * module simply becomes a regular queue (i.e., elements inserted earlier
    * should be removed before elements of the same priority inserted later)
    *)
-  let rec add (e : elt) (q : queue) = raise ImplementMe
+  let rec add (e : elt) (q : queue) =
+    match q with
+    | [] -> [e] 
+    | hd :: tl -> match C.compare e hd with
+		  | Less | Equal ->  (e :: q)
+		  | Greater -> (hd :: (add e tl))
 
 (*>* Problem 3.4 *>*)
-  let take (q : queue) = raise ImplementMe
+  let take (q : queue) = 
+    match q with
+    | [] -> raise QueueEmpty
+    | hd :: tl -> (hd, tl) (* O(1) *)
 
-  let run_tests () = raise ImplementMe
+  let test_empty_and_take_add () =
+    assert(empty = []);
+    let x = C.generate () in
+    let x1 = C.generate_gt x () in
+    let x0 = C.generate_lt x () in
+    let q = add x empty in
+      let q1 = add x0 q in
+        let q2 = add x1 q1 in
+          let (v, _) = take q2 in
+            assert(v = x0)
+
+  let run_tests () = 
+    test_empty_and_take_add ()
 end
 
-(* IMPORTANT: Don't forget to actually *call* run_tests, as with
- * IntTree above! *)
+module IntQueue = ListQueue(IntCompare)
+let _ = IntQueue.run_tests ()
+
 
 (*>* Problem 3.5 *>*)
 
 (* Now implement a priority queue using a Binary Search Tree.
  * Luckily, you should be able to use *a lot* of your code from above! *)
 
-(* Uncomment when you finish! *)
-(*
 module TreeQueue(C : COMPARABLE) : PRIOQUEUE with type elt = C.t=
 struct
   exception QueueEmpty
@@ -493,10 +514,44 @@ struct
    * e.g. T.insert *)
   module T = (BinSTree(C) : (BINTREE with type elt = C.t))
 
-  (* Implement the remainder of the module! *)
+  type elt = C.t
 
+  type queue = T.tree
+
+  let empty = T.empty
+
+  let is_empty (t : queue) = 
+    match t with 
+    | empty -> true
+    | _ -> false
+
+  let rec add (e : elt) (q : queue) =
+    T.insert e q
+
+  let take (q : queue) = 
+    let min = T.getmin q in 
+      let q' = T.delete min q in
+        (min, q')
+
+  let test_empty_and_take_add () =
+    let x = C.generate () in
+    let x1 = C.generate_gt x () in
+    let x0 = C.generate_lt x () in
+    let q = add x empty in
+      let q1 = add x0 q in
+        let q2 = add x1 q1 in
+          let (v, q3) = take q2 in
+            assert(v = x0);
+	    assert (q3 = (add x1 (add x empty))) 
+
+  let run_tests () = 
+    test_empty_and_take_add ()
 end
-*)
+
+(* compilation seems to throw an error regarding Random module in IntString *)
+module IntTreeQueue = TreeQueue(IntCompare)
+let _ = IntTreeQueue.run_tests ()
+
 
 (*****************************************************************************)
 (*                               Part 4                                      *)
@@ -598,7 +653,11 @@ struct
 
   (* Simply returns the top element of the tree t (i.e., just a single pattern
    * match in *)
-  let get_top (t : tree) : elt = raise ImplementMe
+  let get_top (t : tree) : elt = 
+    match t with
+    | Leaf -> QueueEmpty
+    | OneBranch(e, _) -> e
+    | TwoBranch(_, e, _) -> e
 
   (* Takes a tree, and if the top node is greater than its children, fixes
    * it. If fixing it results in a subtree where the node is greater than its

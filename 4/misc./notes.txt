@@ -1,0 +1,47 @@
+Data Structures:
+
+	Two Queues: 
+
+	Binary Search Tree: A tree s.t. given any root node, all nodes to the left are 
+			    less than the root while all nodes to the right are greater.
+
+			    In terms of complexity, you're looking at average O(log n) search, insert, 
+			    and delete. If I have a tree like this:
+
+
+							  [8]
+							/     \
+						      [4]      [12]
+						    /    \    /    \
+					          [3]    [5][10]   [14]
+
+			    It's pretty clear that as the depth of the tree increases, in a perfect binary 
+			    tree like the one above, you can add on 2^n nodes | n = the depth of the tree. 
+			    This makes operations obviously (log n).
+
+			    If you don't have a balanced binary tree, however, you might end up with 
+			    something that looks like this:
+
+							  [8]
+							     \
+							      [9]
+								 \
+								  [10]
+								     \
+								      [11]
+			
+			    which is basically just a linked list and will run in linear time. 
+
+	Priority Queue:
+
+	Binary Heap:
+
+	Red-Black Tree:
+
+Modules:
+
+	- solving the namespace problem
+	- bundling similar functions together.
+	- sealing functions s.t. implementations are abstracted away.
+
+	- Signatures -> Modules -> Functors
