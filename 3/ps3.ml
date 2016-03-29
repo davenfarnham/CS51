@@ -1,5 +1,6 @@
 open Core.Std
 exception ImplementMe
+exception Error
 
 (**************************** Part 1: Bignums *******************************)
 type bignum = {neg: bool; coeffs: int list}
@@ -179,27 +180,36 @@ let _ = assert(equal {neg = false; coeffs = [1;2;3;4]} {neg = false; coeffs = [1
 let less (b1 : bignum) (b2 : bignum) : bool =
   let rec loop l l' tag = 
     (match l, l' with
-     | [], [] | _, [] -> tag
-     | [], _ -> (not tag)
-     | hd :: tl, hd' :: tl' -> if hd' > hd then (not tag)
-		  	       else loop tl tl' tag) in
+     | [], [] -> false
+     | _, [] | [], _ -> raise Error (* should not be of unequal lengths *)
+     | hd :: tl, hd' :: tl' -> if ((hd > hd') && (tag = false)) || ((hd < hd') && (tag = true)) then false
+                               else if ((hd > hd') && (tag = true)) || ((hd < hd') && (tag = false)) then true
+			       else loop tl tl' tag) in		      
   match b1, b2 with
   | {neg = true; coeffs = _}, {neg = false; coeffs = _} -> true
   | {neg = false; coeffs = _}, {neg = true; coeffs = _} -> false
-  | {neg = b; coeffs = c}, {neg = b'; coeffs = c'} -> loop c c' b
+  | {neg = b; coeffs = c}, {neg = _; coeffs = c'} -> if (List.length c) > (List.length c') then b
+						     else if (List.length c) < (List.length c') then (not b)
+						     else loop c c' b
 ;;
 
 let _ = assert (less {neg = false; coeffs = []} {neg = false; coeffs = []} = false)
+let _ = assert (less {neg = false; coeffs = [5;4]} {neg = false; coeffs = [6]} = false)
+let _ = assert (less {neg = true; coeffs = [5;4]} {neg = false; coeffs = [6]} = true)
 let _ = assert (less {neg = false; coeffs = [1;2]} {neg = false; coeffs = [1;3]} = true)
 let _ = assert (less {neg = true; coeffs = [1;2;3]} {neg = true; coeffs = [1;3;2]} = false)
+let _ = assert (less {neg = false; coeffs = [2;1]} {neg = false; coeffs = [8;5]} = true)
+let _ = assert (less {neg = false; coeffs = [7;2]} {neg = false; coeffs = [6;5]} = false)
 let _ = assert (less {neg = false; coeffs = [1;2;3;4]} {neg = false; coeffs = [1;2;3;4]} = false)
  
 
 let greater (b1 : bignum) (b2 : bignum) : bool =
-  if (not (less b1 b2) && not (equal b1 b2)) then true else false
+  if (not (less b1 b2)) && (not (equal b1 b2)) then true else false
 ;;
 
-(* take an int 'b'^(pow) *)
+let _ = assert (greater {neg = false; coeffs = [2;1]} {neg = false; coeffs = [8;5]} = false)
+
+(* take an int 'b'^(pow) - DON'T USE. Problems inherent in integer overflow. *)
 let rec power (b: int) (pow: int) : int = 
   if pow = 0 then 1
   else (b * (power b (pow - 1))) 
@@ -283,6 +293,7 @@ let _ = assert (plus {neg = false; coeffs = [1;2;3]} {neg = false; coeffs = [1;2
 let _ = assert (plus {neg = true; coeffs = [1;2;3]} {neg = true; coeffs = [1;2]} = {neg = true; coeffs = [1;3;5]})
 let _ = assert (plus {neg = false; coeffs = [1;2;3]} {neg = true; coeffs = [1;2]} = {neg = false; coeffs = [1;1;1]})
 let _ = assert (plus {neg = true; coeffs = [1;2;3]} {neg = false; coeffs = [1;2]} = {neg = true; coeffs = [1;1;1]})
+let _ = assert (plus {neg = false; coeffs = [8;6]} {neg = true; coeffs = [2;1]} = {neg = false; coeffs = [6;5]})
 
 
 (*>* Problem 1.5 *>*)
@@ -309,8 +320,7 @@ let _ = assert (plus {neg = true; coeffs = [1;2;3]} {neg = false; coeffs = [1;2]
 *)
 let rec multiply (num: int) (l: int list) (r: int) : (int list) = 
   match (l, num) with
-  | ([], _) -> if r = 0 then []
-	       else [r]
+  | ([], _) -> if r = 0 then [] else [r]
   | (_, 0) -> []
   | (hd' :: tl', _) -> let p = num * hd' in 
 		         let p' = (p + r) mod base in 
@@ -323,6 +333,24 @@ let _ = assert (multiply 0 [1;2;3] 0 = [])
 let _ = assert (multiply 12 (List.rev [4]) 0 = [4;8])
 let _ = assert (multiply 5 (List.rev [1;2;3]) 0 = [6;1;5])
 let _ = assert (multiply 9 (List.rev [1;2;3]) 0 = [1;1;0;7])
+let _ = assert (multiply 10 (List.rev [1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1]) 0 = 
+				      [1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;0])
+let _ = assert (multiply 28 (List.rev [1;5;9;7;2;5;0;6;2;0;9;2;8;4;6;9;5;2;4;1;5;5;1;1;3;0;2;4;0;1;2;3;2;5;8;9;1;7;9;3;9;5;1;8;1;1;1;7;4;4]) 0 =
+		                      [4;4;7;2;3;0;1;7;3;8;5;9;9;7;1;4;6;6;7;6;3;4;3;1;6;4;6;7;2;3;4;5;1;2;4;9;7;0;2;3;0;6;5;0;7;1;2;8;8;3;2])
+
+
+let zerofill (lst: int list) (p: int) : int list =
+  let rec loop p' = 
+    match p' with
+    | 0 -> []
+    | _ -> 0 :: loop (p' - 1) in 
+  lst @ (loop p)
+;;
+
+let _ = assert (zerofill [2] 0 = [2])
+let _ = assert (zerofill [2] 5 = [2;0;0;0;0;0])
+let _ = assert (zerofill [2;5] 5 = [2;5;0;0;0;0;0])
+
 
 let times (b1 : bignum) (b2 : bignum) : bignum =
   let {neg = b; coeffs = c} = b1 in 
@@ -330,7 +358,7 @@ let times (b1 : bignum) (b2 : bignum) : bignum =
       let rec loop (lst: int list) (p: int) = 
         match lst with
 	| [] -> {neg = false; coeffs = []}
-	| hd :: tl -> plus_pos {neg = false; coeffs = (multiply (hd * (power base p)) (List.rev c') 0)} (loop tl (p+1)) in
+	| hd :: tl -> plus_pos {neg = false; coeffs = (zerofill (multiply hd (List.rev c') 0) p)} (loop tl (p+1)) in
   match (b, b') with
   | (true, true) | (false, false) -> loop (List.rev c) 0
   | _ -> negate (loop (List.rev c) 0)
@@ -340,6 +368,12 @@ let _ = assert (times {neg = false; coeffs = [1;2;3]} {neg = false; coeffs = []}
 let _ = assert (times {neg = false; coeffs = [1;2;3]} {neg = true; coeffs = [1;4]} = {neg = true; coeffs = [1;7;2;2]})
 let _ = assert (times {neg = true; coeffs = [1;2]} {neg = true; coeffs = [1;4]} = {neg = false; coeffs = [1;6;8]})
 let _ = assert (times {neg = true; coeffs = [1;2]} {neg = false; coeffs = [1;4;5]} = {neg = true; coeffs = [1;7;4;0]})
+let _ = assert (times {neg = false; coeffs = [1;5;9;7;2;5;0;6;2;0;9;2;8;4;6;9;5;2;4;1;5;5;1;1;3;0;2;4;0;1;2;3;2;5;8;9;1;7;9;3;9;5;1;8;1;1;1;7;4;4]}
+		      {neg = false; coeffs = [2;8]} = 
+		      {neg = false; coeffs = [4;4;7;2;3;0;1;7;3;8;5;9;9;7;1;4;6;6;7;6;3;4;3;1;6;4;6;7;2;3;4;5;1;2;4;9;7;0;2;3;0;6;5;0;7;1;2;8;8;3;2]})
+let _ = assert (times {neg = false; coeffs = [2;8]}
+		      {neg = false; coeffs = [1;5;9;7;2;5;0;6;2;0;9;2;8;4;6;9;5;2;4;1;5;5;1;1;3;0;2;4;0;1;2;3;2;5;8;9;1;7;9;3;9;5;1;8;1;1;1;7;4;4]} =
+		      {neg = false; coeffs = [4;4;7;2;3;0;1;7;3;8;5;9;9;7;1;4;6;6;7;6;3;4;3;1;6;4;6;7;2;3;4;5;1;2;4;9;7;0;2;3;0;6;5;0;7;1;2;8;8;3;2]})
 
 
 (* Returns a bignum representing b/n, where n is an integer less than base *)
@@ -410,7 +444,7 @@ let rec exponent (b : bignum) (e : bignum) : bignum =
     let (q, r) = divmod (clean e) (fromInt 2) in
     let res = exponent (clean b) q in
     let exp = (times (times res res) (exponent (clean b) r))
-    in {neg = exp.neg; coeffs = stripzeroes exp.coeffs}
+    in print_string ((toString exp) ^ "\n"); {neg = exp.neg; coeffs = stripzeroes exp.coeffs}
 
 (* Returns true if n is prime, false otherwise. *)
 let isPrime (n : bignum) : bool =
@@ -478,9 +512,54 @@ let rec generateKeyPair (r : bignum) : bignum * bignum * bignum =
 
 (*>* Problem 2.1 *>*)
 
+(* returns b to the power of e mod m. Assumes positive exponent. *)
+let exponent' (b : bignum) (e : bignum): bignum =
+  let rec loop b' e' = 
+    if e' = {neg = false; coeffs = [0]} then {neg = false; coeffs = [1]}
+    else if e' = {neg = false; coeffs = [1]} then b'
+    else times b' (loop b' (plus e' {neg = true; coeffs = [1]})) in
+  loop b e
+;;
+
+(* e = 5, s = 11 *)
+assert (exponent' {neg = false; coeffs = [1;1]} {neg = false; coeffs = [5]} = {neg = false; coeffs = [1;6;1;0;5;1]})
+(* e = 11, s = 7 *)
+assert (exponent' {neg = false; coeffs = [7]} {neg = false; coeffs = [1;1]} = {neg = false; coeffs = [1;9;7;7;3;2;6;7;4;3]})
+
+
+(* returns (b1/b2, b1 mod b2). Assumes positive bignums. Is extremely inefficient. *)
+let divmod' (b1: bignum) (b2: bignum) : (bignum * bignum)= 
+  let rec loop b1' b2' count = 
+    if ((greater b1' b2') || (equal b1' b2')) then (let b3' = plus b1' {neg = true; coeffs = b2'.coeffs} in
+			      		             loop b3' b2' (plus count (fromInt 1))) 
+    else ({neg = false; coeffs = count.coeffs}, b1') in
+  loop b1 b2 (fromInt 0)
+;;
+
+(* b1 = 10; b2 = 3 *)
+assert (divmod' {neg = false; coeffs = [1;0]} {neg = false; coeffs = [3]} = ({neg = false; coeffs = [3]}, {neg = false; coeffs = [1]}))
+(* b1 = 423; b2 = 7 *)
+assert (divmod' {neg = false; coeffs = [4;2;3]} {neg = false; coeffs = [7]} = ({neg = false; coeffs = [6;0]}, {neg = false; coeffs = [3]}))
+
+
 (* To encrypt, pass in n e s. To decrypt, pass in n d s. *)
 let encryptDecryptBignum (n : bignum) (e : bignum) (s : bignum) : bignum =
-  raise ImplementMe
+  expmod s e n
+;;
+
+(* n = 65, e = 11, s = 7 *)
+let _ = assert (encryptDecryptBignum {neg = false; coeffs = [6;5]}
+			     	     {neg = false; coeffs = [3;5]}
+			     	     (encryptDecryptBignum {neg = false; coeffs = [6;5]} 
+			     			   	   {neg = false; coeffs = [1;1]} 
+			     			           {neg = false; coeffs = [7]}) = {neg = false; coeffs = [7]})
+
+(* n = 21, e = 5, s = 11 *)
+let _ = assert (encryptDecryptBignum {neg = false; coeffs = [2;1]}
+			     	     {neg = false; coeffs = [5]}
+			     	     (encryptDecryptBignum {neg = false; coeffs = [2;1]} 
+			     			   	   {neg = false; coeffs = [5]} 
+			     			           {neg = false; coeffs = [1;1]}) = {neg = false; coeffs = [1;1]})
 
 
 (* Pack a list of chars as a list of bignums, with m chars to a bignum. *)
