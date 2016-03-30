@@ -37,6 +37,7 @@ let fromInt (n: int) : bignum =
 
 let _ = assert(fromInt 0 = {neg = false; coeffs = []})
 let _ = assert(fromInt 921 = {neg = false; coeffs = [9;2;1]})
+let _ = assert(fromInt 256 = {neg = false; coeffs = [2;5;6]})
 let _ = assert(fromInt (-921) = {neg = true; coeffs = [9;2;1]})
 let _ = assert(fromInt 1024 = {neg = false; coeffs = [1;0;2;4]})
 let _ = assert(fromInt (-2147483648) = {neg = true; coeffs = [2;1;4;7;4;8;3;6;4;8]})
@@ -605,16 +606,24 @@ let rec encDecBignumList (n : bignum) (e : bignum) (lst : bignum list) =
     | h :: t -> encryptDecryptBignum n e h :: encDecBignumList n e t
 
 
-
 (*>* Problem 2.2 *>*)
-let encrypt (n : bignum) (e : bignum) (s : string) =
-  raise ImplementMe
-
+let encrypt (n : bignum) (e : bignum) (s : string) : (bignum list) =
+  encDecBignumList n e (charsToBignums (explode s) (bytesInKey n))
+;;
 
 (* Decrypt an encrypted message (list of bignums) to produce the
  * original string. *)
-let decrypt (n : bignum) (d : bignum) (m : bignum list) =
-  raise ImplementMe
+let decrypt (n : bignum) (d : bignum) (m : bignum list) : string =
+  implode (bignumsToChars (encDecBignumList n d m)) 
+;;
+
+let _ = let (e, d, n) = generateKeyPair({neg = false; coeffs = [1;9]}) in 
+	  let lst = encrypt n e "Drake for ever" in
+	    assert (decrypt n d lst = "Drake for ever")
+
+let _ = let (e, d, n) = generateKeyPair({neg = false; coeffs = [1;0]}) in 
+	  let lst = encrypt n e "Be sure to drink your Ovaltine" in
+	    assert (decrypt n d lst = "Be sure to drink your Ovaltine")
 
 
 (**************** Challenge 2: Faster Multiplication *********************)
