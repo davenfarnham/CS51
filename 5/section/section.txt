@@ -1,0 +1,126 @@
+(1) Moogle
+
+   - What are you doing in this pset?
+
+        - The goal is to simulate something like google, which crawls webpages for certain words, returning URLs that contain said target words.
+
+    - Wait, what? ...how?
+    
+        - before you start, you have to understand some of the basic data structures we're going to be using:
+        
+            - dictionary: a dictionary is something that maps a [key] to a [value]. The keys are going to be unique. In our implementation, our
+              [keys] are strings, which will simply be the words found on a certain webpage, while our [values] are LinkSet.sets, so sets of URLS.
+              For example, let's say the word "Rob" is on both my webpage and Ben's webpage, the dictionary will then look something like this:
+              
+                            "Rob" -> {www.daven.com; www.ben.com} (* note, the brackets are just used to clearly demarcate the set, we actually don't know
+                                                                     how the set is implemented due to abstraction *)
+                
+            - LinkSet: a set of abstract data types, "links". Sets 1) have no order and 2) there can't be any duplicates. So a set {1, 6} == {6, 1} and in our
+              implementation of a set, there'll never be an instance where a set contains the same value > once; {1, 2, 2}, for example, doesn't work. Note, when using 
+              LinkSet, the nature of the data structure is abstracted away, so you'll have to use the functions defined in the signature to access and change it.
+        
+    - in the first part of the pset, you're crawling over a collection of webpages looking for the appearance of certain words. If the webpage you're on has the word, 
+      stick the url into your dictionary, with the word as the [key] and the webpage as part of the set associated with the [key]'s [value].
+            
+    - some useful functions: 
+        - LinkSet.insert: elt -> set -> set
+        - WordDict.insert: dict -> key -> value -> dict 
+        - LinkSet.choose: set -> (elt * set) option
+        - CrawlerServices.get_page: link -> page
+        - CrawlerServices.num_pages_to_search: int  
+        - etc...
+
+        - a page is a record containing a url, links, and words. Access each tag's value using dot notation! 
+        
+(2.1) Part 2
+
+    - In this part, you're simply trying to convert sets to dictionaries. Sets are everywhere in this problem set, so why do we want to convert
+      them to dictionaries? Well, a lot of the reasoning comes from part 3 where we then convert our dictionaries into 2-3 trees, which will make things 
+      much faster.
+      
+    - So, what you want to do is convert sets to dictionaries. It's a bit confusing in the spec, in that members of sets are referred to as "keys" but note
+      that these are different from the keys in dictionaries. All you want to do in part 2 of the pset is convert sets to dictionaries (so our crawler will, effectively,
+      be a dictionary with [keys] to [values] where these values are sets, and, after you're done with part 2, those 'sets' will really be implemented as 
+      dictionaries (which we'll then make super fast by converting to 2-3 trees). 
+      
+    - make sure you understand what are in dictionaries and, in particular, how to use Dict.Make() which is at the very bottom of dict.ml
+      - Dict.Make is a functor, which takes an arguement D, which adheres to the signature DICT_ARG. DICT_ARG requires a few things:
+      
+                                                type key
+                                                type value
+                                                val compare
+                                                val string_of_key
+                                                val string_of_value
+                                                
+                                                (* and a bunch of testing functions *)
+
+      - passing in DICT_ARG to Dict.Make will, with a few signatures in DICT_ARG, create an entire Dict module.
+
+      - so for part two, you'll probably want to adhere to these signatures when you're making your Dict. Then, after you've made the dict in your dict-set module, you can 
+        then use the functions and types within when representing sets as dictionaries.
+
+(2.2) Intro to part 2-3 trees
+
+    - So great, now you've created a crawler that links words to URLs. But having a dictonary that is essentially an associated list is going to be 
+      slow. Let's change it to a tree to hopefully cut down on the complexity.
+
+    - trees are powerful because of their logarithmic nature; in order to protect this, you need to ensure that a tree is balanced. If a tree isn't
+      balanced, it'll basically devolve into a linked list:
+      
+                                        7                                                                               7
+                                       /                                                                              /   \
+                                      8                                                                              8     9
+                                     /                                                                              / \   / \       < -- balanced (min heap)    
+                                    9           <--  a bad, unbalanced tree that will run O(n)                     10 11 12 13
+                                   /
+                                  10
+                                 /
+                                11  
+                               /
+                              12
+                             /
+                            13
+                        
+    - in the left tree, searching for 13 takes 7 operations (so basically the length of the tree) whereas on the right it'll only take 3
+
+    - one way to balance trees is by constructing a 2-3 tree:
+        - basically, there are 2 kinds of nodes: nodes with 2 nodes coming off them, and nodes with 3 coming off them. So, for example, 
+        
+          (* two node *)                (* three node *)
+                3                           [3 ; 5]
+               / \                         /   |   \
+              2   4                       2    4    6
+     
+    - notice that, for the two node, everything to the left is <= the parent node, while everything to the right is >= the parent node. For the three node, 
+      the same rules apply, except you can have a middle value that's both >= the left value in the parent node and <= the right value in the parent node.
+      
+    - what's super important is that the length from either a two node or a three node to a leaf HAS TO BE THE SAME - this basically ensures that the overall
+      tree is going to be balanced. Also note that in this terminology, a "leaf" doesn't really have any value connected with it. So, let's say my tree has 
+      one value, 2. 
+                            
+                            add a 4 ->                                                                          add a 3 ->
+                |-----|                     |-----|-----|                                                                   |-----|
+                |  2  |                     |  2  |  4  |  (* notice, the length to leaves are all the same *)              |  3  |
+                |_____|                     |_____|_____|                                                                   |_____|
+               /       \                    /     |     \                                                                   /      \
+              /         \                  /      |      \                                                                 /        \
+            LEAF        LEAF            LEAF     LEAF    LEAF                                                           |-----|   |-----|
+                                                                                                                        |  2  |   |  4  |
+                                                                                                                        |_____|   |_____|
+                                                                                                                         /  \       / \ 
+                                                                                                                        /    \     /   \
+                                                                                                                       LEAF LEAF LEAF LEAF
+
+    - and here you see how nodes pop back and forth between 2 and 3 nodes making sure the lengths to all leaves are the same. Your task in this pset will be 
+      to figure out, among other things, how to create and then maintain the invariants associated with a 2-3 tree to cut down on the complexity of your 
+      dictionary.
+    
+    - tree insertion (downward)
+        - you will always, except in the special case, go to the base case and then bubble back up
+        
+    - tree insertion (upward)
+        - once you hit the base case, go up, transforming whatever parent nodes are above you to 2 or 3 nodes, which ever ensures the invariants
+
+(3) Section notes
+
+  - see section5.ml

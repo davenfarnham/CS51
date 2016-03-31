@@ -1,0 +1,20 @@
+(1) Start by talking about crawler
+    - mention what sets are, what dictionaries are, the different functions and types in CrawlerServices
+    
+(2) Open up section5.ml
+    - go over Nodeset
+        - open up myset.ml and go over the set module, comparable module, and ListSet, which is basically
+          exactly what students are supposed to do except with a dictionary.
+
+    - go over how to use a functor to create a data structure from another data structure (functor.ml). Make
+      sure to point out how you're passing in the comparable module, and then using C.t as the elt. In order to 
+      successfully return a Set module, all the types and functions inside Set have to be matched and handled 
+      by the functor.
+
+    - in the pset, for part 2, instead of implementing a set using a list, or, like we just did, using a Queue, 
+      you'll instead be using a dictionary. So what is a dictionary?
+      
+    - go over dictionary (why we are doing part 2 [to get ready for 2-3 trees], some of the functions and types in
+      the signature, and Dict.make()
+
+(3) Go over graphs a little bit
