@@ -628,9 +628,49 @@ let _ = let (e, d, n) = generateKeyPair({neg = false; coeffs = [1;0]}) in
 
 (**************** Challenge 2: Faster Multiplication *********************)
 
+(* return sublists from list [0, pos) *)
+let rec sublist (lst: 'a list) (pos: int) : ('a list * 'a list) = 
+  match pos with
+  | 0 -> ([], lst)
+  | _ -> match lst with
+	 | [] -> raise Error (* lst not large enough *)
+	 | hd :: tl -> (match (sublist tl (pos - 1)) with
+			| ([], tl') -> ([hd], tl')
+		        | (hd', tl') -> (hd :: hd', tl'))
+;;
+
+let _ = assert (sublist [1;2] 2 = ([1;2], []))
+let _ = assert (sublist [1;2;3] 0 = ([], [1;2;3]))
+let _ = assert (sublist [1;2;3;4;5] 2 = ([1;2], [3;4;5]))
+
+
+(* same as zerofill, but works on bignums *)
+let shift (b: bignum) (s: int) : bignum = 
+  let {neg = b; coeffs = c} = b in
+    let c' = zerofill c s in 
+      {neg = b; coeffs = c'}
+;;      
+
 (* Returns a bignum representing b1*b2 *)
 let times_faster (b1 : bignum) (b2 : bignum) : bignum =
-  raise ImplementMe
+  let rec karatsuba (b1': bignum) (b2': bignum) : bignum = 
+    let ({neg = _; coeffs = c}, {neg = _; coeffs = c'}) = (b1', b2') in 
+      let (l, l') = (List.length c, List.length c') in
+	(* if size of either bignum <= 4 then use regular multiplication *)
+        if l <= 4 || l' <= 4 then times b1' b2' 
+	(* optimal value is ceiling, but here it's floor *)
+        else let m = (if l > l' then l'/2 else l/2) in 
+	  let (x1, x0) = sublist (List.rev c) m in
+	    let (y1, y0) = sublist (List.rev c') m in
+	      let z0 = times {neg = false; coeffs = (List.rev x1)} {neg = false; coeffs = (List.rev y1)} in
+	        let z2 = karatsuba {neg = false; coeffs = (List.rev x0)} {neg = false; coeffs = (List.rev y0)} in 
+		  let z1 = plus (plus (karatsuba (plus {neg = false; coeffs = (List.rev x0)} {neg = false; coeffs = (List.rev x1)})
+				   	         (plus {neg = false; coeffs = (List.rev y0)} {neg = false; coeffs = (List.rev y1)}))
+			        (negate z2)) (negate z0) in
+		    plus (plus (shift z2 (2*m)) (shift z1 m)) z0 in
+  karatsuba b1 b2
+;;
 
+let _ = print_string (toString (times_faster {neg = false; coeffs = [1;2;3;4;5]} {neg = false; coeffs = [4;5;6;7;8;9]}))
 
-let minutes_spent = raise ImplementMe
+let minutes_spent = 51
