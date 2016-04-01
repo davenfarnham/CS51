@@ -1,5 +1,4 @@
 open Core.Std
-exception ImplementMe
 exception Error
 
 (**************************** Part 1: Bignums *******************************)
@@ -668,9 +667,36 @@ let times_faster (b1 : bignum) (b2 : bignum) : bignum =
 				   	         (plus {neg = false; coeffs = (List.rev y0)} {neg = false; coeffs = (List.rev y1)}))
 			        (negate z2)) (negate z0) in
 		    plus (plus (shift z2 (2*m)) (shift z1 m)) z0 in
-  karatsuba b1 b2
+  match (b1, b2) with
+  | {neg = false; coeffs = _}, {neg = true; coeffs = _} | {neg = true; coeffs = _}, {neg = false; coeffs = _} -> negate (karatsuba b1 b2)
+  | _ -> karatsuba b1 b2
 ;;
 
-let _ = print_string (toString (times_faster {neg = false; coeffs = [1;2;3;4;5]} {neg = false; coeffs = [4;5;6;7;8;9]}))
+let _ = assert (times {neg = false; coeffs = []} {neg = false; coeffs = []} = 
+		times_faster {neg = false; coeffs = []} {neg = false; coeffs = []})
+
+let _ = assert (times {neg = false; coeffs = [1;2;3;4;5]} {neg = false; coeffs = [4;5;6;7;8;9]} = 
+		times_faster {neg = false; coeffs = [1;2;3;4;5]} {neg = false; coeffs = [4;5;6;7;8;9]})
+
+let _ = assert (times {neg = false; coeffs = [1;2;3;4;5]} {neg = true; coeffs = [4;5;6;7;8;9]} = 
+		times_faster {neg = false; coeffs = [1;2;3;4;5]} {neg = true; coeffs = [4;5;6;7;8;9]})
+
+let _ = assert (times {neg = true; coeffs = [1;2;3;4;5;6;7]} {neg = true; coeffs = [4;5;6;7;8;9]} = 
+		times_faster {neg = true; coeffs = [1;2;3;4;5;6;7]} {neg = true; coeffs = [4;5;6;7;8;9]})
+
+let _ = assert (times {neg = true; coeffs = [1;2;3;4;5]} {neg = true; coeffs = [4;5;6;7;8;9]} = 
+		times_faster {neg = true; coeffs = [1;2;3;4;5]} {neg = true; coeffs = [4;5;6;7;8;9]})
+
+let _ = assert (times {neg = false; coeffs = []} {neg = true; coeffs = [4;5;6;7;8;9]} = 
+		times_faster {neg = false; coeffs = []} {neg = true; coeffs = [4;5;6;7;8;9]})
+
+(*
+let _ = assert (let t = Sys.time () in
+		  ignore (times {neg = true; coeffs = [1;2;3;4;5]} {neg = true; coeffs = [4;5;6;7;8;9]});
+		    let t' = Sys.time () - t in  
+		      let k = Sys.time () in 
+		        ignore (times_faster {neg = true; coeffs = [1;2;3;4;5]} {neg = true; coeffs = [4;5;6;7;8;9]});
+			  (Sys.time () - k) < t')
+*)
 
 let minutes_spent = 51
