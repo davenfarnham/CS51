@@ -690,13 +690,23 @@ let _ = assert (times {neg = true; coeffs = [1;2;3;4;5]} {neg = true; coeffs = [
 let _ = assert (times {neg = false; coeffs = []} {neg = true; coeffs = [4;5;6;7;8;9]} = 
 		times_faster {neg = false; coeffs = []} {neg = true; coeffs = [4;5;6;7;8;9]})
 
-(*
-let _ = assert (let t = Sys.time () in
-		  ignore (times {neg = true; coeffs = [1;2;3;4;5]} {neg = true; coeffs = [4;5;6;7;8;9]});
-		    let t' = Sys.time () - t in  
-		      let k = Sys.time () in 
-		        ignore (times_faster {neg = true; coeffs = [1;2;3;4;5]} {neg = true; coeffs = [4;5;6;7;8;9]});
-			  (Sys.time () - k) < t')
-*)
+let _ = assert (let t1 = Time.now () in
+		  ignore (times {neg = true; coeffs = [1;2;3;4;5;6;7;8;9;1;2;3;4;5;6;7;8;9;1;2;3;4;5;6;7;8;9;1;2;3;4;5;6;7;8;9]} 
+				{neg = true; coeffs = [1;2;3;4;5;6;7;8;9;1;2;3;4;5;6;7;8;9;1;2;3;4;5;6;7;8;9;1;2;3;4;5;6;7;8;9]});
+		    let t2 = Time.now () in
+		      let t' = Time.diff t2 t1 in  
+  		        let k1 = Time.now () in 
+		          ignore (times_faster {neg = true; coeffs = [1;2;3;4;5;6;7;8;9;1;2;3;4;5;6;7;8;9;1;2;3;4;5;6;7;8;9;1;2;3;4;5;6;7;8;9]} 
+					       {neg = true; coeffs = [1;2;3;4;5;6;7;8;9;1;2;3;4;5;6;7;8;9;1;2;3;4;5;6;7;8;9;1;2;3;4;5;6;7;8;9]});
+			    let k2 = Time.now () in
+			      let k' = Time.diff k2 k1 in
+				
+				(*
+					printf "times: %s, " (Time.Span.to_string t');
+					printf "times_faster: %s, " (Time.Span.to_string k');
+				*)
+
+			        (k' < t'))
+
 
 let minutes_spent = 51

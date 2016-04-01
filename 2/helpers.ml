@@ -4,14 +4,16 @@ open ExpressionLibrary ;;
 
 exception Error
 
-(*** Most functions here are used for the extra credit: find_zeros_exact.      ***)
-(*** My solution isn't complete; most notably it doesn't handle division well, ***)
-(*** both in canceling terms and adding terms with common denominators. A      ***)
-(*** number of bugs should be addressed, 1) "x/2 / (1 + 2) + 3" isn't          ***)
-(*** evaluated correctly, and 2) "(5 + 2) * (x - 8)" comes back negative       ***)
-(*** when it should be positive. Future additions should handle division       ***)
-(*** better and cancel variables in the denominator, since if you can't	       ***)
-(*** cancel an "x" in the denominator, there can't be a root.		       ***)
+(* 
+ * Most functions here are used for the extra credit: find_zeros_exact.      
+ * My solution isn't complete; most notably it doesn't handle division well, 
+ * both in canceling terms and adding terms with common denominators. A      
+ * number of bugs should be addressed, 1) "x/2 / (1 + 2) + 3" isn't          
+ * evaluated correctly, and 2) "(5 + 2) * (x - 8)" comes back negative       
+ * when it should be positive. Future additions should handle division       
+ * better and cancel variables in the denominator, since if you can't	       
+ * cancel an "x" in the denominator, there can't be a root.		       
+ *)
 
 let rec contains_var (e:expression) : bool =
   match e with
