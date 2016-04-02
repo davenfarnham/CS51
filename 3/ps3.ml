@@ -661,7 +661,7 @@ let times_faster (b1 : bignum) (b2 : bignum) : bignum =
         else let m = (if l > l' then l'/2 else l/2) in 
 	  let (x1, x0) = sublist (List.rev c) m in
 	    let (y1, y0) = sublist (List.rev c') m in
-	      let z0 = times {neg = false; coeffs = (List.rev x1)} {neg = false; coeffs = (List.rev y1)} in
+	      let z0 = karatsuba {neg = false; coeffs = (List.rev x1)} {neg = false; coeffs = (List.rev y1)} in
 	        let z2 = karatsuba {neg = false; coeffs = (List.rev x0)} {neg = false; coeffs = (List.rev y0)} in 
 		  let z1 = plus (plus (karatsuba (plus {neg = false; coeffs = (List.rev x0)} {neg = false; coeffs = (List.rev x1)})
 				   	         (plus {neg = false; coeffs = (List.rev y0)} {neg = false; coeffs = (List.rev y1)}))
@@ -701,10 +701,10 @@ let _ = assert (let t1 = Time.now () in
 			    let k2 = Time.now () in
 			      let k' = Time.diff k2 k1 in
 				
-			        (*				
+			        (**)				
 					printf "times: %s, " (Time.Span.to_string t');
 					printf "times_faster: %s, " (Time.Span.to_string k');
-				*)
+				(**)
 
 			        (k' < t'))
 
