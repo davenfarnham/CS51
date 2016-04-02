@@ -1,0 +1,89 @@
+(1) BigNum 
+
+    - What are we doing in the pset?
+        - In the pset, you're going to be working on trying to find a representation, using records, 
+          of big numbers that exceed the maximum representable value of an Int in Ocaml.
+    - Why do you want to do this?
+        - Because in a lot of things, such as RSA encryption, you need to deal with very big numbers. Not
+          only that; if you open up utop, type: 1,073,741,824. This is only slightly over 1 billion (there're 
+          people in the world with more money than this). What do you get? You get an error because Ocaml is
+          very limited in what it can represent by an Int. 
+
+    - In Ocaml, Ints only use 30 bits. In C, if I give you an unsigned Int, what is
+      the largest value it can represent? (2^32 - 1) What about for a signed Int? (2^31 - 1) 
+    - In Ocaml, the largest int is 2^30 -1 which significantly limits the # of representations 
+      in Ocaml. So the question is why do they do this?
+        - It's all due to an optimization. So integers and pointers are kind of the same thing, right?
+          If you think back you CS50, integers and pointers are both 4 bytes, so in memory they're 
+          going to look very similar. In Ocaml, one of the leading bits is used simply as a flag to 
+          quickly identify whether a value is an int or pointer - runtime is thus sped up by not 
+          needing to check if every 4 byte value needs to be dereferenced.
+    
+    
+    In Big Nums you're going to try, using records, to come up with a way to represent larger numbers.
+
+        (* Quick note: just for reference, not for this pset, if you want to use a value larger than 2^30 - 1 
+                       you can use Int64 module. You denote this by adding an 'L' at the end of a large number, 
+                       like:
+                                let long = 2000000000000L;;
+        *)                        
+
+    What are records? They're basically structs (so it's kind of like a collection of values).    
+
+    (* define type *)    
+    type info = {name: string; age: int};; (* 'name' and 'age' are like labels *)    
+    
+    (* use type *)
+    let me = {name = "Daven"; age = 27};;
+    let student = {name = "Zabs"; age = 19};;
+    
+    (* I can use records just like anything else, referencing their fields with '.' *)
+    let teacher x = (x.name = "Daven");; 
+    
+    assert(teacher me = true);; 
+    assert(teacher student = false);; 
+    
+    In the pset, the record you're dealing with is type bignum = {neg: bool; coeffs: int list}. I think in 
+    the spec we talk about a base of 1000, but in the actual pset we use a base of 10. Which would mean, if
+    I want to represent the number 1017, this equals 1 * 10^3 + 0 * 10^2 + 1 * 10^1 + 7 * 10^0. Taking the
+    coefficients, I get the list [1;0;1;7]. This solves our problem of only being able to deal with small #s;
+    my list can be any size I want, so I could conceivably have a list of size 1000 where the largest term is 
+    the coefficient to 10^999, which is an absolutely insane number (there are only between 10^78 - 10^83 atoms
+     in the observable universe)
+
+(2) Agenda:
+
+    (* More HO functions -> Substitution model *)
+    
+    HO - Everyone should feel comfortable with HO functions by now. HO functions simply take other functions
+         as arguements. 
+    
+    Substitution model - The main things you should worry about are let bindings, scope, and shadowing
+
+    In Ocaml, you want to evaluate expressions until you reach a value, which can simply be a number or a function.
+    Once you have a value, you can then bind that value. For example:
+    
+        -> let a x = x + 1;; (* is this done? Nope, 'x + 1' is not a value *)
+          -> let a x = (fun x -> x + 1)  (* so 'a' is the function that takes a value, x, and adds 1 to it *)         
+   
+        -> let a x = let b = 4 in b + x;;
+            -> let a x = (fun x -> 4 + x) (* 'a' is the function that takes a value, x, and adds 4 to it *)
+            
+     In the above, you want to bind variables to their closest occurence. So, b = 4 binds 4 to b in the nearest
+     occurence.
+     
+        -> let a = 30 in let a = 12 in let a = 4 in a * a;; (* what do you get! *)
+          -> let a = 30 in let a = 12 in 4 * 4  
+            -> let a = 30 in let a = 12 in 16 (* no where to bind a, so just return 16 *)  
+            
+     Here, only the last 'a' is used since it is closed to the expression. All the previous 'a' values are shadowed.
+     
+        -> let a = 1 in a + let b = 2 in let a = 3 in a + b;;
+          -> let a = 1 in a + let b = 2 in 3 + b;;
+            -> let a = 1 in a + 3 + 2;;
+              -> 1 + 3 + 2;;
+                -> 6;;
+              
+(3) Section Notes
+
+    Check file section.ml!
