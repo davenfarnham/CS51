@@ -63,5 +63,4 @@ Modules:
 	- solving the namespace problem
 	- bundling similar functions together.
 	- sealing functions s.t. implementations are abstracted away.
-
 	- Signatures -> Modules -> Functors

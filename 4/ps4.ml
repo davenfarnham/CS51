@@ -127,7 +127,6 @@ struct
 
   let to_string (p, s) = "(" ^ string_of_int p ^ "," ^ s ^ ")"
 
-
   let () = Random.self_init ()
 
   let generate () = (0, string_of_int (Random.int Int.max_value))
