@@ -471,11 +471,11 @@ struct
     match q with
     | [] -> [e] 
     | hd :: tl -> match C.compare e hd with
-		  | Less | Equal ->  (e :: q)
-		  | Greater -> (hd :: (add e tl))
+		  | Less -> (e :: q)
+		  | Equal | Greater -> (hd :: (add e tl))
 
 (*>* Problem 3.4 *>*)
-  let take (q : queue) = 
+  let take (q : queue) : (elt * queue) = 
     match q with
     | [] -> raise QueueEmpty
     | hd :: tl -> (hd, tl) (* O(1) *)
@@ -483,16 +483,21 @@ struct
   let test_empty_and_take_add () =
     assert(empty = []);
     let x = C.generate () in
+    let x' = C.generate () in
     let x1 = C.generate_gt x () in
     let x0 = C.generate_lt x () in
     let q = add x empty in
       let q1 = add x0 q in
         let q2 = add x1 q1 in
-          let (v, _) = take q2 in
-            assert(v = x0)
+	  let q3 = add x' q2 in
+            let (v, r) = take q3 in
+              assert(v = x0);
+	    let (v', _) = take r in
+	      assert (v' = x) 
 
   let run_tests () = 
     test_empty_and_take_add ()
+
 end
 
 module IntQueue = ListQueue(IntCompare)
