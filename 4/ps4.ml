@@ -577,6 +577,7 @@ module BinaryHeap(C : COMPARABLE) : PRIOQUEUE with type elt = C.t =
 struct
 
   exception QueueEmpty
+  exception Error
 
   type elt = C.t
 
@@ -682,7 +683,6 @@ struct
 							          | Some (e', t') -> Some (e', TwoBranch (b, e1, t1, t')))
 						       | Some (e', t') -> Some (e', TwoBranch (b, e1, t', t2)))
   				    | Greater -> Some (e1, TwoBranch (b, e, t1, t2)))
-;;
 
   (* Takes a tree, and if the top node is greater than its children, fixes
    * it. If fixing it results in a subtree where the node is greater than its
@@ -703,8 +703,6 @@ struct
 							    | None -> t
 						 	    | Some (e', t') -> fix (TwoBranch (b, e', t1, fix t')))
 								
-;;
-
   let extract_tree (q : queue) : tree =
     match q with
     | Empty -> raise QueueEmpty
@@ -723,7 +721,16 @@ struct
    * down into a new node at the bottom of the tree. *This* is the node
    * that we want you to return.
    *)
-  let rec get_last (t : tree) : elt * queue = raise ImplementMe
+  let rec get_last (t : tree) : elt * queue = 
+    match t with
+    | Leaf e -> (e, Empty)
+    | OneBranch (e1, e2) -> (e2, Tree (Leaf e1))
+    | TwoBranch (Odd, e, t1, t2) -> (match get_last t1 with
+				     | (e', Empty) -> raise Error
+				     | (e', Tree t') -> (e', Tree (TwoBranch (Even, e, t', t2))))
+    | TwoBranch (Even, e, t1, t2) -> (match get_last t2 with
+				      | (e', Empty) -> (e', Tree (OneBranch(e, get_top t1))) 
+				      | (e', Tree t') -> (e', Tree (TwoBranch (Odd, e, t1, t'))))
 
   (* Implements the algorithm described in the writeup. You must finish this
    * implementation, as well as the implementations of get_last and fix, which
@@ -771,7 +778,29 @@ struct
 		      let t8 = take 
 *)    
 
-  let run_tests () = raise ImplementMe
+  let test_get_last () = 
+    let t = empty in 
+      let x = C.generate () in (* 5 *)
+    	let x1 = C.generate_gt x () in (* 7 *)
+    	  let x2 = C.generate_gt x1 () in (* 9 *)
+     	    let x3 = C.generate_gt x2 () in (* 15 *)
+    	      let x4 = C.generate_gt x3 () in (* 17 *)
+    	        let x5 = C.generate_gt x4 () in (* 25 *)
+		    let t1 = add x t in 
+		    let t2 = add x2 t1 in 
+		    let t3 = add x1 t2 in 
+		    let t4 = add x4 t3 in 
+		    let t5 = add x3 t4 in 
+		    let t6 = add x5 t5 in 
+                      match t6 with
+                      | Empty -> raise Error
+                      | Tree t' -> let (e, q) = get_last t' in
+		     	             assert (e = x5);
+			             assert (q = Tree (TwoBranch (Even, x, OneBranch(x2, x4), OneBranch(x1, x3))))
+
+  let run_tests () = 
+    test_get_last ()
+
 end
 
 
@@ -798,6 +827,9 @@ module IntListQueue = (ListQueue(IntCompare) :
                         PRIOQUEUE with type elt = IntCompare.t)
 module IntHeapQueue = (BinaryHeap(IntCompare) :
                         PRIOQUEUE with type elt = IntCompare.t)
+
+let _ = IntHeapQueue.run_tests ()
+
 (*
 module IntTreeQueue = (TreeQueue(IntCompare) :
                         PRIOQUEUE with type elt = IntCompare.t)
