@@ -796,7 +796,17 @@ struct
                       | Empty -> raise Error
                       | Tree t' -> let (e, q) = get_last t' in
 		     	             assert (e = x5);
-			             assert (q = Tree (TwoBranch (Even, x, OneBranch(x2, x4), OneBranch(x1, x3))))
+			             assert (q = Tree (TwoBranch (Even, x, OneBranch (x2, x4), OneBranch(x1, x3))));
+				     match q with
+				     | Empty -> raise Error
+				     | Tree t'' -> let (e', q') = get_last t'' in
+				       		     assert (e' = x3);
+				       		     assert (q' = Tree (TwoBranch (Odd, x, OneBranch (x2, x4), Leaf x1)));
+				     match t1 with
+				     | Empty -> raise Error
+				     | Tree t1' -> let (e'', q'') = get_last t1' in
+						     assert (e'' = x);
+	                                             assert (q'' = Empty)
 
   let run_tests () = 
     test_get_last ()
