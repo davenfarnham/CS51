@@ -756,27 +756,11 @@ struct
        | Empty -> (e, Tree (fix (OneBranch (last, get_top t1))))
        | Tree t2' -> (e, Tree (fix (TwoBranch (Odd, last, t1, t2')))))
     (* Implement the odd case! *)
-    | TwoBranch (Odd, e, t1, t2) -> raise ImplementMe
-
-(*
-  let test_fix () = 
-    let t = empty in 
-      let x = C.generate () in (* 5 *)
-    	let x1 = C.generate_gt x () in (* 7 *)
-    	  let x2 = C.generate_gt x1 () in (* 9 *)
-     	    let x3 = C.generate_gt x2 () in (* 15 *)
-    	      let x4 = C.generate_gt x3 () in (* 17 *)
-    	        let x5 = C.generate_gt x4 () in (* 25 *)
-    	          let x6 = C.generate_gt x5 () in (* 30 *)
-		    let t1 = add t x in 
-		    let t2 = add t1 x2 in 
-		    let t3 = add t2 x1 in 
-		    let t4 = add t3 x4 in 
-		    let t5 = add t4 x3 in 
-		    let t6 = add t5 x5 in 
-		    let t7 = add t6 x6 in 
-		      let t8 = take 
-*)    
+    | TwoBranch (Odd, e, t1, t2) -> 
+      let (last, q2') = get_last t1 in
+      (match q2' with
+       | Tree t1' -> (e, Tree (fix (TwoBranch (Even, last, t1', t2))))
+       | _ -> raise Error)      
 
   let test_get_last () = 
     let t = empty in 
@@ -808,11 +792,39 @@ struct
 						     assert (e'' = x);
 	                                             assert (q'' = Empty)
 
+  let test_take () = 
+    let t = empty in 
+      let x = C.generate () in (* 5 *)
+    	let x1 = C.generate_gt x () in (* 7 *)
+    	  let x2 = C.generate_gt x1 () in (* 9 *)
+     	    let x3 = C.generate_gt x2 () in (* 15 *)
+    	      let x4 = C.generate_gt x3 () in (* 17 *)
+    	        let x5 = C.generate_gt x4 () in (* 25 *)
+		  let t1 = add x t in 
+		  let t2 = add x2 t1 in 
+		  let t3 = add x1 t2 in 
+		  let t4 = add x4 t3 in 
+		  let t5 = add x3 t4 in 
+                  let t6 = add x5 t5 in 
+		    (* test taking from an ODD TwoBranch *)
+	            let (e, q) = take t6 in
+		      assert (e = x);
+		      assert (q = Tree (TwoBranch (Even, x1, OneBranch (x2, x4), OneBranch (x3, x5))));
+ 		      (* test taking from an EVEN TwoBranch *)
+		      let (e', q') = take q in
+			assert (e' = x1);
+			assert (q' = Tree (TwoBranch (Odd, x2, OneBranch (x4, x5), Leaf x3)));
+		  let x6 = C.generate_lt x () in
+		    let t7 = add x6 t6 in
+		      let (e'', q'') = take t7 in
+		        assert (e'' = x6);
+			assert (q'' = Tree (TwoBranch (Odd, x, TwoBranch (Even, x2, Leaf x4, Leaf x5), OneBranch (x1, x3))))
+
   let run_tests () = 
-    test_get_last ()
+    test_get_last ();
+    test_take ()
 
 end
-
 
 
 (* Now to actually use our priority queue implementations for something useful!
