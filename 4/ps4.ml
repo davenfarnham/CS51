@@ -698,10 +698,10 @@ struct
 				      match C.compare e1 e2 with
 				      | Less -> (match find e t1 with
 						 | None -> t
-						 | Some (e', t') -> fix (TwoBranch (b, e', fix t', t2)))
+						 | Some (e', t') -> TwoBranch (b, e', fix t', t2))
 				      | Greater | Equal -> (match find e t2 with
 							    | None -> t
-						 	    | Some (e', t') -> fix (TwoBranch (b, e', t1, fix t')))
+						 	    | Some (e', t') -> TwoBranch (b, e', t1, fix t'))
 								
   let extract_tree (q : queue) : tree =
     match q with

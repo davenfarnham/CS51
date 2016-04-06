@@ -52,9 +52,15 @@ Data Structures:
 			
 			    which is basically just a linked list and will run in linear time. 
 
-	Priority Queue:
+	Priority Queue: A priority queue is one where elements in the queue are given a ranking. In most 
+		  	implementations, you dequeue based on smallest ranking. So, for example, let's say I 
+			add 2, 1, 8, 9 and 0 to a queue. In a regular queue -> [2;1;8;9;0] where dequeue'ing
+			results first in 2, then 1, etc. In a priority, you always deqeue the element with
+			highest priority. Hence, you'd get 0, 1, 2, etc. from the above queue.
 
-	Binary Heap:
+	Binary Heap: A heap is a binary tree with the added characteristics that it is (1) complete and (2) 
+		     depending on whether it is a max-heap or min-heap, all children are either >= or <= 
+		     their root node, respectively.
 
 	Red-Black Tree:
 
