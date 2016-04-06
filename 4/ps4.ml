@@ -662,10 +662,48 @@ struct
     | OneBranch(e, _) -> e
     | TwoBranch(_, e, _, _) -> e
 
+  (* return elt < e plus new tree with e swapped for elt *)
+  let rec find (e: elt) (t: tree) : (elt * tree) option = 
+    match t with
+    | Leaf e1 -> (match C.compare e e1 with
+		  | Less | Equal -> None
+		  | Greater -> Some (e1, Leaf e))
+     
+    | OneBranch (e1, e2) -> (match C.compare e e1 with
+			     | Less | Equal -> None
+			     | Greater -> (match C.compare e e2 with
+					   | Less | Equal -> Some (e1, OneBranch (e, e2))
+					   | Greater -> Some (e1, OneBranch (e2, e))))
+
+    | TwoBranch (b, e1, t1, t2) -> (match C.compare e e1 with
+				    | Less | Equal -> (match find e t1 with
+						       | None -> (match find e t2 with
+							          | None -> None
+							          | Some (e', t') -> Some (e', TwoBranch (b, e1, t1, t')))
+						       | Some (e', t') -> Some (e', TwoBranch (b, e1, t', t2)))
+  				    | Greater -> Some (e1, TwoBranch (b, e, t1, t2)))
+;;
+
   (* Takes a tree, and if the top node is greater than its children, fixes
    * it. If fixing it results in a subtree where the node is greater than its
    * children, then you must (recursively) fix this tree too. *)
-  let rec fix (t : tree) : tree = raise ImplementMe
+  let rec fix (t : tree) : tree = 
+    match t with
+    | Leaf _ -> t
+    | OneBranch (e1, e2) -> (match C.compare e1 e2 with
+			     | Less | Equal -> t
+			     | Greater -> OneBranch (e2, e1))
+    | TwoBranch (b, e, t1, t2) -> let e1 = get_top t1 in 
+				    let e2 = get_top t2 in
+				      match C.compare e1 e2 with
+				      | Less -> (match find e t1 with
+						 | None -> t
+						 | Some (e', t') -> fix (TwoBranch (b, e', fix t', t2)))
+				      | Greater | Equal -> (match find e t2 with
+							    | None -> t
+						 	    | Some (e', t') -> fix (TwoBranch (b, e', t1, fix t')))
+								
+;;
 
   let extract_tree (q : queue) : tree =
     match q with
@@ -712,6 +750,26 @@ struct
        | Tree t2' -> (e, Tree (fix (TwoBranch (Odd, last, t1, t2')))))
     (* Implement the odd case! *)
     | TwoBranch (Odd, e, t1, t2) -> raise ImplementMe
+
+(*
+  let test_fix () = 
+    let t = empty in 
+      let x = C.generate () in (* 5 *)
+    	let x1 = C.generate_gt x () in (* 7 *)
+    	  let x2 = C.generate_gt x1 () in (* 9 *)
+     	    let x3 = C.generate_gt x2 () in (* 15 *)
+    	      let x4 = C.generate_gt x3 () in (* 17 *)
+    	        let x5 = C.generate_gt x4 () in (* 25 *)
+    	          let x6 = C.generate_gt x5 () in (* 30 *)
+		    let t1 = add t x in 
+		    let t2 = add t1 x2 in 
+		    let t3 = add t2 x1 in 
+		    let t4 = add t3 x4 in 
+		    let t5 = add t4 x3 in 
+		    let t6 = add t5 x5 in 
+		    let t7 = add t6 x6 in 
+		      let t8 = take 
+*)    
 
   let run_tests () = raise ImplementMe
 end
