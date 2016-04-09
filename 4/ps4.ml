@@ -294,8 +294,8 @@ struct
   let rec getmax (t : tree) : elt = 
     match t with
     | Leaf -> raise EmptyTree
-    | Branch (l, v, Leaf) -> head (List.rev v)
-    | Branch (l, v, r) -> getmax r  
+    | Branch (_, v, Leaf) -> head (List.rev v)
+    | Branch (_, _, r) -> getmax r  
 
   let test_insert () =
     let x = C.generate () in
@@ -319,7 +319,7 @@ struct
     let x = C.generate () in
     let t = insert x empty in
     assert (search x t);
-    let order = [ true; false; true; true; true; false; false] in
+    let order = [true; false; true; true; true; false; false] in
     let full_tree, values_inserted =
       List.fold_right
         ~f:(fun current_order (tree_so_far, values_so_far) ->
@@ -524,9 +524,7 @@ struct
   let empty = T.empty
 
   let is_empty (t : queue) = 
-    match t with 
-    | empty -> true
-    | _ -> false
+    if t = empty then true else false
 
   let add (e : elt) (q : queue) =
     T.insert e q
@@ -547,13 +545,37 @@ struct
             assert(v = x0);
 	    assert (q3 = (add x1 (add x empty))) 
 
+  let sort_test () = 
+    let x5 = C.generate () in
+    let x4 = C.generate_lt x5 () in 
+    let x3 = C.generate_lt x4 () in
+    let x2 = C.generate_lt x3 () in
+    let x = C.generate_lt x2 () in
+      let q = add x5 empty in
+       let q1 = add x4 q in
+         let q2 = add x2 q1 in
+           let q3 = add x q2 in
+             let q4 = add x3 q3 in
+	       let (v, w) = take q4 in
+                 assert (v = x);	       
+               let (v', w') = take w in
+		 assert (v' = x2);		
+               let (v'', w'') = take w' in
+		 assert (v'' = x3);		
+               let (v''', w''') = take w'' in
+		 assert (v''' = x4);		
+               let (v'''', _) = take w''' in
+		 assert (v'''' = x5)
+
   let run_tests () = 
-    test_empty_and_take_add ()
+    test_empty_and_take_add ();
+    sort_test ()
+
 end
 
 (* compilation seems to throw an error regarding Random module in IntString *)
-module IntTreeQueue = TreeQueue(IntCompare)
-let _ = IntTreeQueue.run_tests ()
+module ITreeQueue = TreeQueue(IntCompare)
+let _ = ITreeQueue.run_tests ()
 
 
 (*****************************************************************************)
@@ -726,7 +748,7 @@ struct
     | Leaf e -> (e, Empty)
     | OneBranch (e1, e2) -> (e2, Tree (Leaf e1))
     | TwoBranch (Odd, e, t1, t2) -> (match get_last t1 with
-				     | (e', Empty) -> raise Error
+				     | (_, Empty) -> raise Error
 				     | (e', Tree t') -> (e', Tree (TwoBranch (Even, e, t', t2))))
     | TwoBranch (Even, e, t1, t2) -> (match get_last t2 with
 				      | (e', Empty) -> (e', Tree (OneBranch(e, get_top t1))) 
@@ -849,20 +871,16 @@ module IntListQueue = (ListQueue(IntCompare) :
                         PRIOQUEUE with type elt = IntCompare.t)
 module IntHeapQueue = (BinaryHeap(IntCompare) :
                         PRIOQUEUE with type elt = IntCompare.t)
-
-let _ = IntHeapQueue.run_tests ()
-
-(*
 module IntTreeQueue = (TreeQueue(IntCompare) :
                         PRIOQUEUE with type elt = IntCompare.t)
-*)
+
+(* test functions in binary heap *)
+let _ = IntHeapQueue.run_tests ()
 
 (* store the whole modules in these variables *)
 let list_module = (module IntListQueue : PRIOQUEUE with type elt = IntCompare.t)
 let heap_module = (module IntHeapQueue : PRIOQUEUE with type elt = IntCompare.t)
-(*
 let tree_module = (module IntTreeQueue : PRIOQUEUE with type elt = IntCompare.t)
-*)
 
 (* Implements sort using generic priority queues. *)
 let sort (m : (module PRIOQUEUE with type elt=IntCompare.t)) (lst : int list) =
@@ -875,7 +893,6 @@ let sort (m : (module PRIOQUEUE with type elt=IntCompare.t)) (lst : int list) =
   let pq = List.fold_right ~f:P.add ~init:P.empty lst in
   List.rev (extractor pq [])
 
-
 (* Hurray!! Now, we can pass in the modules into sort and get out
  * different sorts!! *)
 
@@ -883,18 +900,41 @@ let sort (m : (module PRIOQUEUE with type elt=IntCompare.t)) (lst : int list) =
  * implementation is equivalent to heap sort! *)
 let heapsort = sort heap_module
 
+let _ = assert (heapsort [] = [])
+let _ = assert (heapsort [5;4;2;1;3] = [1;2;3;4;5])
+let _ = assert (heapsort [5;4;3;2;1] = [1;2;3;4;5])
+let _ = assert (heapsort [-5;-4;2;1;3] = [-5;-4;1;2;3])
+
+
 (* Sorting with a priority queue with your underlying tree
  * implementation is *almost* equivalent to treesort;
  * a real treesort relies on self-balancing binary search trees *)
 
-(*
 let treesort = sort tree_module
-*)
+
+(* to debut treesort *)
+let rec print_list (l: int list) : unit = 
+  match l with
+  | [] -> print_string "\n"
+  | hd :: tl -> print_int hd; print_list tl
+;;
+
+let _ = assert (treesort [] = [])
+let _ = assert (treesort [5;4;2;1;3] = [1;2;3;4;5])
+let _ = assert (treesort [5;4;3;2;1] = [1;2;3;4;5])
+let _ = assert (treesort [-5;-4;2;1;3] = [-5;-4;1;2;3])
+
 
 (* Sorting with a priority queue with an underlying unordered list
  * implementation is equivalent to heap sort! If your implementation of
- * ListQueue used ordered ilsts, then this is really insertion sort *)
+ * ListQueue used ordered lists, then this is really insertion sort *)
 let selectionsort = sort list_module
+
+let _ = assert (selectionsort [] = [])
+let _ = assert (selectionsort [5;4;2;1;3] = [1;2;3;4;5])
+let _ = assert (selectionsort [5;4;3;2;1] = [1;2;3;4;5])
+let _ = assert (selectionsort [-5;-4;2;1;3] = [-5;-4;1;2;3])
+
 
 (* You should test that these sorts all correctly work, and that
  * lists are returned in non-decreasing order!! *)
@@ -923,4 +963,4 @@ let selectionsort = sort list_module
  * See the Sys module for functions related to keeping track of time *)
 
 (*>* Problem N.2 *>*)
-let minutes_spent : int = raise ImplementMe
+let minutes_spent : int = 51

@@ -1,0 +1,24 @@
+(* a binary search tree passing in the Int 
+Comparable module. will return a tree, however, 
+there's no guarantee this tree will be complete. 
+hence, its running time could be O(n). *)
+
+    module IntTree = BinSTree(IntCompare)
+
+(* implement a priority queue using a list. Add 
+O(n); take O(1). *)
+
+    module IntQueue = ListQueue(IntCompare)
+
+(* implement a priority queue using the binary 
+search tree. again, could basically devolve into 
+a list like the above list queue. *)
+
+    module IntTreeQueue = TreeQueue(IntCompare)
+
+
+(* for sorts: *)
+
+IntListQueue (priority queue using a list)
+IntHeapQueue (priority queue using a binary heap)
+IntTreeQueue (priority queue using a binary tree)
