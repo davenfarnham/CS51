@@ -951,6 +951,49 @@ let _ = assert (selectionsort [-5;-4;2;1;3] = [-5;-4;1;2;3])
  * type defined by that module. You should use your BinaryHeap module.
  *)
 
+(* interfance for sorting module *)
+module type SORT =
+sig
+    type c 
+    val sort : c list ->  c list 
+end
+
+(* functor to take in a comparable module and return a sort module *)
+module SortFun(C : COMPARABLE) : SORT with type c = C.t =
+struct
+  type c = C.t
+
+  module B = (BinaryHeap(C) : (PRIOQUEUE with type elt = C.t))
+
+  (* taken from above *)
+  let sort (lst: c list) : (c list) = 
+    let rec extractor pq lst =
+      if B.is_empty pq then lst else
+      let (x, pq') = B.take pq in
+      extractor pq' (x::lst) in
+    let pq = List.fold_right ~f:B.add ~init:B.empty lst in
+    List.rev (extractor pq [])
+end
+
+module SFunInt = SortFun(IntCompare)
+
+let _ = assert (SFunInt.sort [] = [])
+let _ = assert (SFunInt.sort [5;4;2;1;3] = [1;2;3;4;5])
+let _ = assert (SFunInt.sort [5;4;3;2;1] = [1;2;3;4;5])
+let _ = assert (SFunInt.sort [-5;-4;2;1;3] = [-5;-4;1;2;3])
+
+
+module SFunTup = SortFun(IntStringCompare)
+
+let _ = assert (SFunTup.sort [] = [])
+let _ = assert (SFunTup.sort [(5,"a");(4,"b");(2,"c");(1,"d");(3,"e")] = 
+			     [(1,"d");(2,"c");(3,"e");(4,"b");(5,"a")])
+let _ = assert (SFunTup.sort [(5,"a");(4,"b");(3,"e");(2,"c");(1,"d")] = 
+			     [(1,"d");(2,"c");(3,"e");(4,"b");(5,"a")])
+let _ = assert (SFunTup.sort [(-5,"a");(-4,"b");(2,"c");(1,"d");(3,"e")] = 
+			     [(-5,"a");(-4,"b");(1,"d");(2,"c");(3,"e")])
+
+
 (*>* Problem N.1 *>*)
 (* Challenge problem:
  * Now that you are learning about asymptotic complexity, try to
