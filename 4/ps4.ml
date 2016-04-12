@@ -975,6 +975,7 @@ struct
     List.rev (extractor pq [])
 end
 
+(* sort ints *)
 module SFunInt = SortFun(IntCompare)
 
 let _ = assert (SFunInt.sort [] = [])
@@ -983,6 +984,7 @@ let _ = assert (SFunInt.sort [5;4;3;2;1] = [1;2;3;4;5])
 let _ = assert (SFunInt.sort [-5;-4;2;1;3] = [-5;-4;1;2;3])
 
 
+(* sort (int * string) *) 
 module SFunTup = SortFun(IntStringCompare)
 
 let _ = assert (SFunTup.sort [] = [])
@@ -1004,6 +1006,26 @@ let _ = assert (SFunTup.sort [(-5,"a");(-4,"b");(2,"c");(1,"d");(3,"e")] =
  * Of course include your code for how you performed the measurements below.
  * Be convincing when establishing the algorithmic complexity of each sort.
  * See the Sys module for functions related to keeping track of time *)
+
+(* create a list of random ints *)
+let rec create_list (size: int) (bound: int) : (int list) = 
+  match size with
+  | 0 -> []
+  | n -> (Random.int bound) :: create_list (size - 1) bound
+;;
+
+(* print out contents to file *)
+let rec print_to_file (f: out_channel) (lst: int list) : unit = 
+  match lst with
+  | [] ->  (fprintf f "\n") 
+  | hd :: tl -> fprintf f "%i " hd; print_to_file f tl
+;; 
+
+let _ = 
+  let file = "sort.txt" in
+    let oc = open_out file in 
+      print_to_file oc (SFunInt.sort (create_list 20 20))
+;;
 
 (*>* Problem N.2 *>*)
 let minutes_spent : int = 51
