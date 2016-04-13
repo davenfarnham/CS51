@@ -16,6 +16,7 @@ open Core.Std
  * get to them. *)
 
 exception ImplementMe
+exception Error
 
 type order = Equal | Less | Greater
 
@@ -1011,7 +1012,7 @@ let _ = assert (SFunTup.sort [(-5,"a");(-4,"b");(2,"c");(1,"d");(3,"e")] =
 let rec create_list (size: int) (bound: int) : (int list) = 
   match size with
   | 0 -> []
-  | n -> (Random.int bound) :: create_list (size - 1) bound
+  | _ -> (Random.int bound) :: create_list (size - 1) bound
 ;;
 
 (* print out contents to file *)
@@ -1021,10 +1022,40 @@ let rec print_to_file (f: out_channel) (lst: int list) : unit =
   | hd :: tl -> fprintf f "%i " hd; print_to_file f tl
 ;; 
 
+(*
+(* run sort multiple times, printing out time and list size to .csv *)
 let _ = 
-  let file = "sort.txt" in
+  let file = "test.csv" in
     let oc = open_out file in 
       print_to_file oc (SFunInt.sort (create_list 20 20))
+;;
+*)
+
+(* s = initial size; e = # of iterations; f = out file; srt = kind of sort *)
+let rec check (s: int) (e: int) (f: out_channel) srt : unit = 
+  match e with
+  | 0 -> (fprintf f "\n")
+  | _ -> let l = create_list s s in
+           let t = Time.now () in
+             ignore(srt l);
+             let t' = Time.now () in
+               let d = Time.diff t' t in
+		 fprintf f "%i,%f\n" s (Time.Span.to_sec d); 
+		 check (s * 2) (e - 1) f srt
+;;
+
+let _ = 
+  let rec loop lst funs = 
+  match lst with
+  | [] -> ()
+  | hd :: tl -> let file = hd in
+    		  let oc = open_out file in 
+		    match funs with
+		    | [] -> raise Error
+		    | hd' :: tl' -> check 2 15 oc hd';
+        	      	            (Out_channel.close oc); loop tl tl' in (* deals with exceptions *)
+  let l = [heapsort; treesort; selectionsort] in
+    loop ["heapsort.csv"; "treesort.csv"; "selectionsort.csv"] l
 ;;
 
 (*>* Problem N.2 *>*)

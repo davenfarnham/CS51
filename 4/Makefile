@@ -17,4 +17,4 @@ clean:
 	rm -rf _build *.native *.ml~
 
 clean_tests:
-	rm -rf *.txt
+	rm -rf *.csv
