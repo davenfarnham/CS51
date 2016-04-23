@@ -1,4 +1,5 @@
 open Core.Std
+open IO
 open Huffman
 
 exception Error
@@ -30,18 +31,18 @@ let rec bit_manip (s: string) (size: int) (blst: (int * int) list) (l: int) m : 
 	else raise Error)
 ;;
 
-let rec print_list l = 
+let rec print_list l f = 
   match l with
   | [] -> ()
-  | (i, i') :: tl -> print_int i; print_int i'; print_string "\n"; print_list tl
+  | (i, i') :: tl -> (IO.write_i32 f i); (IO.write_byte f i'); print_list tl
 ;;
 
 let _ = 
   let fs = [(45, ["a"]); (13, ["b"]); ( 12, ["c"]); (16, ["d"]); (9, ["e"]); (5, ["f"])] in
     let (encoding, decoding) = encode fs in
-      let lst = bit_manip "abc" 0 [(0, 0)] 0 encoding in
-        print_list lst
-
+      let lst = bit_manip "abcdab" 0 [(0, 0)] 0 encoding in
+	let f = open_out "out" in
+          print_list lst f
 (*
       let f = open_in "text" in
         let l = input_line f in
