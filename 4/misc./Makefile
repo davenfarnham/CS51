@@ -13,6 +13,9 @@ trees:
 huffman:
 	corebuild huffman.native
 
+compress:
+	ocamlbuild -use-ocamlfind -tag thread -pkg core,batteries compress.native
+
 testing:
 	corebuild testing.native
 

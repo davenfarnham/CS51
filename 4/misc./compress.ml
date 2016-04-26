@@ -1,5 +1,5 @@
 open Core.Std
-open IO
+open Batteries
 open Huffman
 
 exception Error
@@ -21,7 +21,7 @@ let _ = assert (bit_helper 0 "101" 0 0 = (5, 3))
 (* pass in string to compress *)
 let rec bit_manip (s: string) (size: int) (blst: (int * int) list) (l: int) m : ((int * int) list) =
   if l = String.length s then blst 
-  else (if (Encoding.mem (Char.to_string s.[l]) m) then (let value = (Encoding.find (Char.to_string s.[l]) m) in
+  else (if (Encoding.mem (Char.escaped s.[l]) m) then (let value = (Encoding.find (Char.escaped s.[l]) m) in
                                             if (((String.length value) + size) > 32) then (match bit_helper 0 value 0 0 with
 							                                   | (num, space) -> bit_manip s space ((num, space) :: blst) (l + 1) m)
 			                    else (match blst with
@@ -34,13 +34,13 @@ let rec bit_manip (s: string) (size: int) (blst: (int * int) list) (l: int) m : 
 let rec print_list l f = 
   match l with
   | [] -> ()
-  | (i, i') :: tl -> (IO.write_i32 f i); (IO.write_byte f i'); print_list tl
+  | (i, i') :: tl -> (IO.write_i32 f i); (IO.write_byte f i'); (print_list tl f)
 ;;
 
 let _ = 
   let fs = [(45, ["a"]); (13, ["b"]); ( 12, ["c"]); (16, ["d"]); (9, ["e"]); (5, ["f"])] in
     let (encoding, decoding) = encode fs in
-      let lst = bit_manip "abcdab" 0 [(0, 0)] 0 encoding in
+      let lst = bit_manip "abcdefabcdefabcdef" 0 [(0, 0)] 0 encoding in
 	let f = open_out "out" in
           print_list lst f
 (*
