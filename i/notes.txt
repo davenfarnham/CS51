@@ -1,0 +1,77 @@
+Let:
+	You can turn let expressions into applications and functions.
+	For example, (let x = 3 in x * x) can be rewritten as: ((fun x -> x * x) 3).
+
+You want to find the free variables in your expressions. Keep track of the free 
+variables (those variables that'll be substituted in for by a value) so that
+when you see them you can make the substitution. I think in this pset you maintain a 
+{set} of free variables.
+
+	Free variables are those you will use; they aren't in a definition.
+
+	let x = 3 in x + x; (* x + x *);; Are free variables. You'll replace s.t. 3 + 3
+
+	let x = 3 in let f = (fun x -> x + x) in f 4;; The x in fun isn't free - don't substitute 3 for it.
+
+	-> let y = (fun k -> k) in 
+		-> let f = (fun x -> x + (y 1)) in 
+			-> f (y 5)
+				-> 6
+
+Substitution:
+	
+	-> let x = 3 in x + x 
+		-> (fun x -> x + x) 3 (* so in this case there are no free variables *)
+		
+	-> let x = 3 in x + y
+		-> (fun x -> x + y) 3 (* y is a free variable *)
+			-> (3 + y)
+
+	-> let x = (3 + y) in x + y
+		-> (fun x -> x + 3) (3 + y) 
+			(3 + y) == P && y is a fv in P
+
+			-> (fun z -> (x + y)) (x -> (3 + y)) (y -> z)		
+				-> (3 + y + y) (* 4 *) -> 11
+
+Interpreter decisions:
+
+	Unop: You can only perform unary operations on an integer. Assume negation
+	      is (~-) and not (<>), (!=), or 'not'. Unary operations on variables
+	      are not allowed.
+
+	Binary: For 'plus', 'minus', and 'times', you can only perform the operation between
+		integers. This should still work fine:
+
+			let f = (fun x -> x + 3) in f 3
+				-> App((fun f -> f 3), (fun x -> x + 3))
+					-> ((fun x -> x + 3) 3)
+
+	Letrec: Try to make it work for this:
+
+			let rec f x = if x = 0 then 0 else f (x - 1) in f 5 ;;
+
+		(*** Do we not need to do letrec in subst and eval_s? ***)
+
+Closures:
+
+	You can use a data structure, an environment, to map certain values to 
+        variables. An Environment in this project is a list of (variables * values)
+	where the values are either expressions or Closures, which is an
+	(exp * env).
+
+	for letrec:
+
+		(1) initially put (f, Unassigned) into the env
+		(2) next evaluate e1; this comes back a function
+		(3) extend the env (f, fun)
+		(4) evaluate e2 with this new env
+
+
+TODO:
+
+	(1) fix letrec in eval_d to update the value instead of just 
+	    adding another one to the env.
+
+	(2) finish letrec in eval_l
+	

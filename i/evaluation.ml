@@ -174,15 +174,6 @@ let rec eval_d exp env_ =
   | Raise | Unassigned -> (Env.Val exp)
 ;;
 
-(*
-let rec check_var_env vset_list env exp =
-  match vset_list with
-  | [] -> exp
-  | hd :: tl -> let (Env.Val v) = (Env.lookup env hd) in 
-		  check_var_env tl env (subst hd v exp)
-;;
-*)		      
-
 (* lexically scoped environment *)
 let rec eval_l exp env_ = 
   match exp with
