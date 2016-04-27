@@ -31,6 +31,7 @@ module type Env_type = sig
     val close : expr -> env -> value
     val lookup : env -> varid -> value
     val extend : env -> varid -> value ref -> env
+    val mem : env -> varid -> bool
     val update : env -> varid -> value ref -> env
     val env_to_string : env -> string
     val value_to_string : ?printenvp:bool -> value -> string
@@ -67,6 +68,12 @@ module Env : Env_type =
     let extend (env: env) (varname: varid) (loc: value ref) : env =
       (varname, loc) :: env
 
+    (* return bool if var is in the env *)
+    let rec mem (env: env) (varname: varid) : bool =
+      match env with
+      | [] -> false
+      | (var, value) :: tl -> if var = varname then true else mem tl varname
+
     (* change a varid's value without adding a new element to the env *)
     let rec update (env: env) (varname: varid) (loc: value ref) : env =
       match env with
@@ -78,7 +85,7 @@ module Env : Env_type =
       let rec loop env' = 
 	match env' with
         | [] -> "\n"
-        | (var, value) :: tl -> var ^ (value_to_string !value) ^ (loop tl) in
+        | (var, value) :: tl -> "var: " ^ var ^ " value: " ^ (value_to_string ~printenvp:true !value) ^ "\n" ^ (loop tl) in
       loop env
 
     (* Returns a printable string representation of a value; the flag
@@ -86,8 +93,8 @@ module Env : Env_type =
        string representation when called on a closure *)
     and value_to_string ?(printenvp : bool = true) (v: value) : string =
       match v with
-      | Val e -> exp_to_string e
-      | Closure (e, env) -> if printenvp then ((exp_to_string e) ^ (env_to_string env)) else (exp_to_string e)
+      | Val e -> "Val(" ^ exp_to_string e ^ ")\n"
+      | Closure (e, env) -> "Closure(" ^ if printenvp then ("exp: " ^ (exp_to_string e) ^ "env: " ^ (env_to_string env)) else (exp_to_string e) ^ ")\n"
   end
 ;;
 	     
@@ -185,7 +192,7 @@ let rec eval_d exp env_ =
 let rec eval_l exp env_ = 
   match exp with
   | Bool _ | Num _ -> (Env.Val exp)
-  | Var x -> (Env.lookup env_ x)
+  | Var x -> (Env.lookup env_ x) 
   | Unop(s, e1) -> (match eval_l e1 env_ with
 		    | (Env.Val (Num i)) -> (Env.Val (Num ((unop_helper s) i)))
                     | _ -> raise EvalException)
@@ -219,15 +226,20 @@ let rec eval_l exp env_ =
 					     eval_l e2 env_''  
 			    | Env.Closure (v, viron) -> let viron' = Env.update viron s (ref (Env.Val v)) in
 							  let env_'' = Env.update env_' s (ref (Env.Closure (v, viron'))) in
-							    eval_l e2 env_'')
+							    eval_l e2 env_'')							  
 
   | App(e1, e2) -> (match eval_l e1 env_ with
 		    | Env.Closure (Fun (s, e1'), env_') -> (match eval_l e2 env_ with
-			                         	    | Env.Val v -> let env_'' = Env.extend env_ s (ref (Env.Val v)) in
-						                  	     eval_l e1' env_''
-							    | Env.Closure c -> let env_'' = Env.extend env_ s (ref (Env.Closure c)) in
-									         eval_l e1' env_'')
-		    | _-> raise AppException)
+			                         	    | Env.Val v as t -> let env_'' = Env.extend env_' s (ref t) in
+								                  eval_l e1' env_''
+							    | Env.Closure c as t -> let env_'' = Env.extend env_' s (ref t) in
+								       	              eval_l e1' env_'')
+		    | Env.Val (Fun (s, e1')) -> (match eval_l e2 env_ with
+			                    	 | Env.Val v as t -> let env_' = Env.extend env_ s (ref t) in
+						                       eval_l e1' env_'
+						 | Env.Closure v as t -> let env_' = Env.extend env_ s (ref t) in
+						             		   eval_l e1' env_')
+		    | _ -> raise AppException)
 
   | Raise | Unassigned -> (Env.Val exp)
  

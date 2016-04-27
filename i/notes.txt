@@ -60,20 +60,24 @@ Closures:
 	where the values are either expressions or Closures, which is an
 	(exp * env).
 
-	for letrec:
+Tests for eval_l letrec:
 
-		(1) initially put (f, Unassigned) into the env
-		(2) next evaluate e1; this comes back a function
-		(3) extend the env (f, fun)
-		(4) evaluate e2 with this new env
+	(* standard test *)
+	let rec f = fun x -> if x = 0 then x else f (x - 1) in f 4 ;; (* should return 0 *)
 
+	(* standard continued from .pdf *)
+	let rec f = fun x -> if x = 0 then 1 else x * f (x - 1) in f 4 ;; (* should return 24 *)
+
+	(* check for lexical scope from .pdf *)
+	let x = 1 in let f = fun y -> x + y in let x = 2 in f 3 ;; (* should return 4 *)
+
+	(* a better check for lexical scoping *)
+	let x = 1 in let rec f = fun y -> if y = x then y else f (y - 1) in let x = 2 in f 4 ;; (* should return 1 *)
 
 TODO:
 
 	(1) fix letrec in eval_d to update the value instead of just 
 	    adding another one to the env.
-
-	(2) finish letrec in eval_l
 
 	(3) letrec in eval_s
 
