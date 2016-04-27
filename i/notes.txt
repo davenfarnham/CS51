@@ -74,4 +74,9 @@ TODO:
 	    adding another one to the env.
 
 	(2) finish letrec in eval_l
+
+	(3) letrec in eval_s
+
+	(4) subst for letrec
 	
+	(5) bools are valid for lessthan and equal	
