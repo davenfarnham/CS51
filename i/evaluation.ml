@@ -133,7 +133,12 @@ let rec eval_s exp =
 									        | "<" -> Bool(( < ) i i')
 									        | _ -> Num((binop_helper s) i i')) in
 								  (Env.Val result)
-			 | _ -> raise EvalException)
+			 | (Env.Val (Bool b), Env.Val (Bool b')) -> let result = (match s with
+										  | "=" -> Bool(( = ) b b')
+										  | "<" -> Bool(( < ) b b')
+										  | _ -> raise BinopException) in
+								    (Env.Val result)
+			 | _ -> raise BinopException)
   | Conditional(e1, e2, e3) -> (match eval_s e1 with
 				| (Env.Val (Bool b)) -> (match b with
 							 | true -> (eval_s e2)
@@ -162,6 +167,11 @@ let rec eval_d exp env_ =
 									        | "<" -> Bool(( < ) i i')
 									        | _ -> Num((binop_helper s) i i')) in
 								  (Env.Val result)
+			 | (Env.Val (Bool b), Env.Val (Bool b')) -> let result = (match s with
+										  | "=" -> Bool(( = ) b b')
+										  | "<" -> Bool(( < ) b b')
+										  | _ -> raise BinopException) in
+								    (Env.Val result)
 			 | _ -> raise BinopException)
   | Conditional(e1, e2, e3) -> (match eval_d e1 env_ with
 				| Env.Val (Bool b) -> (match b with
@@ -202,6 +212,11 @@ let rec eval_l exp env_ =
 									        | "<" -> Bool(( < ) i i')
 									        | _ -> Num((binop_helper s) i i')) in
 								  (Env.Val result)
+			 | (Env.Val (Bool b), Env.Val (Bool b')) -> let result = (match s with
+										  | "=" -> Bool(( = ) b b')
+										  | "<" -> Bool(( < ) b b')
+										  | _ -> raise BinopException) in
+								    (Env.Val result)
 			 | _ -> raise BinopException)
   | Conditional(e1, e2, e3) -> (match eval_l e1 env_ with
 				| Env.Val (Bool b) -> (match b with

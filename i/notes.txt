@@ -77,10 +77,9 @@ Tests for eval_l letrec:
 TODO:
 
 	(1) fix letrec in eval_d to update the value instead of just 
-	    adding another one to the env.
+	    adding another one to the env. (might not want to)
 
 	(3) letrec in eval_s
 
 	(4) subst for letrec
 	
-	(5) bools are valid for lessthan and equal	
