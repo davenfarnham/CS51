@@ -31,7 +31,6 @@ module type Env_type = sig
     val close : expr -> env -> value
     val lookup : env -> varid -> value
     val extend : env -> varid -> value ref -> env
-    val mem : env -> varid -> bool
     val update : env -> varid -> value ref -> env
     val env_to_string : env -> string
     val value_to_string : ?printenvp:bool -> value -> string
@@ -67,12 +66,6 @@ module Env : Env_type =
        variable varid to loc *)
     let extend (env: env) (varname: varid) (loc: value ref) : env =
       (varname, loc) :: env
-
-    (* return bool if var is in the env *)
-    let rec mem (env: env) (varname: varid) : bool =
-      match env with
-      | [] -> false
-      | (var, value) :: tl -> if var = varname then true else mem tl varname
 
     (* change a varid's value without adding a new element to the env *)
     let rec update (env: env) (varname: varid) (loc: value ref) : env =
