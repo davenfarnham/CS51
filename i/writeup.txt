@@ -1,0 +1,59 @@
+Expr.ml
+
+	Freevars: A free variable is any variable that isn't bound. For example, in a let:
+
+			let x = 5 in x + 5 ;;
+
+		  You can rewrite this as an application: (fun x -> x + 5) 5 ;; 'x' in this 
+		  case is not free; I wouldn't want to replace x with any other value than 
+		  what is being applied to the function. For example:
+
+			let x = 5 in let f = (fun y -> y + x) in f 10 ;;
+
+		  This breaks into a couple expressions:
+
+			Let(x, 5, Let(f, Fun(y, Binop(+, y, x)), App(f, 10)))
+
+		  You could rewrite this:
+
+			(fun x -> ((fun f -> f 10) (fun y -> y + x))) 5
+
+		  There are no free variables that aren't already assigned a value.
+
+		  For a letrec:
+
+			let rec x = fun y -> x in x ;;
+
+			(fun x -> x) (fun y -> x)
+
+		  'x' is not free in this above expression. 
+
+			let x = fun y -> x in x ;;
+	
+			(fun x -> x) (fun y -> x) ;; (* this would be an error, since it's recursive
+							but not declared recursively; the way rules are
+							defined, though, 'x' would be free in this instance. *)
+
+	Subst:
+
+		For Let:
+
+			(fun y -> k + x + y) (x -> y + 10) 
+		
+			(fun z -> k + (y + 10) + z) (* so y is a free variable in x -> y + 10.
+						       Change y -> z so you make up for changing the
+						       name of the function to 'z' *)
+						    
+		For Letrec:
+
+			let rec f = (fun x -> if x = 0 then x else f (x - 1)) in f 5 ;;
+		
+			-> subst f with (fun x -> if x = 0 then x else f (x - 1)) in f 5
+				-> 
+Evaluation.ml
+
+	eval_s:
+
+	eval_d:
+
+	eval_l:

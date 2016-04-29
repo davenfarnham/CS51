@@ -81,29 +81,36 @@ let new_varname () : varid =
   
 (** Substitute [repl] for free occurrences of [var_name] in [exp] *)
 let subst (var_name: varid) (repl: expr) (exp: expr) : expr =
-  let fv = free_vars exp in
-    let rec subst' (var_name': varid) (repl': expr) (exp': expr) : expr = 
-      match exp' with
-      | Num _ | Bool _ | Raise | Unassigned -> exp'
-      | Var x -> if x = var_name' then repl' else exp'
-      | Unop (s, e) -> Unop(s, (subst' var_name' repl' e))
-      | Binop (s, e1, e2) -> Binop(s, (subst' var_name' repl' e1), (subst' var_name' repl' e2))
-      | Conditional (e1, e2, e3) -> Conditional((subst' var_name' repl' e1), (subst' var_name' repl' e2), (subst' var_name' repl' e3))
-      | Fun (s, e1) -> (match (s = var_name') with
-		        | true -> Fun(s, e1) 
-		        | false -> (match (SS.mem s fv) with
+  let rec subst' (var_name': varid) (repl': expr) (exp': expr) : expr = 
+    match exp' with
+    | Num _ | Bool _ | Raise | Unassigned -> exp'
+    | Var x -> if x = var_name' then repl' else exp'
+    | Unop (s, e) -> Unop(s, (subst' var_name' repl' e))
+    | Binop (s, e1, e2) -> Binop(s, (subst' var_name' repl' e1), (subst' var_name' repl' e2))
+    | Conditional (e1, e2, e3) -> Conditional((subst' var_name' repl' e1), (subst' var_name' repl' e2), (subst' var_name' repl' e3))
+    | Fun (s, e1) -> (match (s = var_name') with
+                      | true -> Fun(s, e1) 
+		      | false -> let fv = free_vars repl in
+				   (match (SS.mem s fv) with
 				    | true -> let z = new_varname() in
-						Fun(z, (subst' var_name' repl' (subst' s (Var z) e1)))
+					        Fun(z, (subst' var_name' repl' (subst' s (Var z) e1)))
 				    | false -> Fun(s, (subst' var_name' repl' e1))))
-      | Let(s, e1, e2) -> (match s = var_name' with
-			   | true -> Let(s, (subst' var_name' repl' e1), e2)
-			   | false -> (match SS.mem s fv with
+    | Let(s, e1, e2) -> (match s = var_name' with
+			 | true -> Let(s, (subst' var_name' repl' e1), e2)
+			 | false -> let fv = free_vars repl in 
+				      (match SS.mem s fv with
 				       | true -> let z = new_varname() in
 						   Let(z, (subst' var_name' repl' e1), (subst' var_name' repl' (subst' s (Var z) e2)))
 				       | false -> Let(s, (subst' var_name' repl' e1), (subst' var_name' repl' e2))))
-      | App(e1, e2) -> App(subst' var_name' repl' e1, subst' var_name' repl' e2) 
-      | Letrec _ -> raise Error in (* don't need to do this? *)
-    subst' var_name repl exp
+    | App(e1, e2) -> App(subst' var_name' repl' e1, subst' var_name' repl' e2) 
+    | Letrec (s, e1, e2) ->(match s = var_name' with
+                            | true -> exp
+                            | false -> let fv = free_vars repl in
+                                         (match SS.mem s fv with
+                                          | true -> let z = new_varname() in
+                                                      Letrec(z, (subst' var_name' repl' e1), (subst' var_name' repl' (subst' s (Var z) e2)))
+                                          | false -> Letrec(s, (subst' var_name' repl' e1), (subst' var_name' repl' e2)))) in
+  subst' var_name repl exp
 ;;
 
 (** Returns a string representation of the expr *)

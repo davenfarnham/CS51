@@ -139,7 +139,8 @@ let rec eval_s exp =
 				| _ -> raise CondException) 
   | Fun(s, e1) -> (Env.Val exp)
   | Let(s, e1, e2) -> eval_s (subst s e1 e2)
-  | Letrec(s, e1, e2) -> raise NotImplemented
+  | Letrec (s, e1, e2) -> let e1' = subst s (Letrec (s, e1, (Var s))) e1 in
+			    eval_s (Let (s, e1', e2))
   | App(e1, e2) -> (match eval_s e1 with
 		    | Env.Val (Fun (x, p)) -> eval_s (Let(x, e2, p))
 		    | _ -> raise AppException)
