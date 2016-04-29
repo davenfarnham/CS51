@@ -67,10 +67,10 @@ module Env : Env_type =
     let extend (env: env) (varname: varid) (loc: value ref) : env =
       (varname, loc) :: env
 
-    (* change a varid's value without adding a new element to the env *)
+    (* change a varid's value without adding a new element to the env; if updating mistakenly, extend *)
     let rec update (env: env) (varname: varid) (loc: value ref) : env =
       match env with
-      | [] -> []
+      | [] -> (extend env varname loc)
       | (id, v) :: tl -> if id = varname then ((id, loc) :: tl) else ((id, v) :: (update tl varname loc))
 
     (* Returns a printable string representation of an environment *)
