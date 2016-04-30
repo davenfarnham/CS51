@@ -95,7 +95,6 @@ module Env : Env_type =
    evaluating the expression `exp` in the environment `env`. In this
    initial implementation, we just convert the expression unchanged to
    a value and return it. *)
-
   
 let eval_t exp _env = Env.Val exp ;;
 
@@ -231,6 +230,7 @@ let rec eval_l exp env_ =
   | Letrec(s, e1, e2) -> let env_' = Env.extend env_ s (ref (Env.Val Unassigned)) in
 			   (match eval_l e1 env_' with
 			    | Env.Val Unassigned -> raise EvalException
+			    (* this might never get called *)
 			    | Env.Val v -> let env_'' = Env.update env_' s (ref (Env.Val v)) in
 					     eval_l e2 env_''  
 			    | Env.Closure (v, viron) -> let viron' = Env.update viron s (ref (Env.Val v)) in
