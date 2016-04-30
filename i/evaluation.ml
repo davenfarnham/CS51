@@ -112,6 +112,12 @@ let unop_helper (s: string) : (int -> int) =
   | _ -> raise Error
 ;;
 
+let rec fold_left f l i = 
+  match l with
+  | [] -> i
+  | hd :: tl -> (f hd (fold_left f tl i))
+;;
+
 (* evaluate using substitution *)
 let rec eval_s exp = 
   match exp with
@@ -144,6 +150,20 @@ let rec eval_s exp =
 		    | Env.Val (Fun (x, p)) -> eval_s (Let(x, e2, p))
 		    | _ -> raise AppException)
   | Raise | Unassigned -> (Env.Val exp)
+
+  (* lists *)
+  | List e -> Env.Val (List ((fold_left (fun x y -> print_string (exp_to_string x);(match eval_s x with
+				                     | Env.Val x' -> x' :: y
+					             | _ -> raise Error)) e [])))
+  | Concat (e, l) -> raise Error
+(*
+(match l with
+		      | List l' -> (match (eval_s e) with
+				    | Env.Val e' -> let [temp] = (e' :: [l']) in
+                                                      Env.Val (List temp)
+				    | _ -> raise Error)
+		      | _ -> raise Error)
+*)
 ;;
 
 (* evaluate dynamically using environment; don't deal with closures yet *)

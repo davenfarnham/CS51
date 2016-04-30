@@ -31,7 +31,7 @@ let repl () =
 	(* read and parse an expression from the input *)
         let exp = Miniml_parse.input Miniml_lex.token lexbuf in
         (* evaluate it *)
-        let res = Evaluation.eval_d exp env in
+        let res = Evaluation.eval_s exp (* env *) in
         (* print the result *)
 	match res with
 	| Evaluation.Env.Val res ->  printf "==> %s\n" (Expr.exp_to_string res)

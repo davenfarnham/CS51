@@ -22,9 +22,13 @@
 %token <string> ID
 %token <int> INT 
 %token TRUE FALSE
+%token LBRACK
+%token RBRACK
+%token CONCAT
 
 %left PLUS MINUS
 %left TIMES
+%right CONCAT
 %nonassoc LESSTHAN
 %nonassoc EQUALS
 
@@ -55,6 +59,8 @@ expnoapp: INT			{ Num $1 }
 	| FUNCTION ID DOT exp	{ Fun($2, $4) }	
 	| RAISE			{ Raise }
 	| OPEN exp CLOSE	{ $2 }
+	| LBRACK exp RBRACK	{ List [$2] }
+	| exp CONCAT exp 	{ Concat ($1, $3) }
 ;
 
 %%

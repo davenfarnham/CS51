@@ -13,6 +13,8 @@ type expr =
   | Raise                                (* exceptions *)
   | Unassigned                           (* (temporarily) unassigned *)
   | App of expr * expr                   (* function applications *)
+  | List of (expr list)
+  | Concat of expr * expr
  and varid = string ;;
 
 exception ExpToStringError
@@ -50,7 +52,11 @@ let free_vars (exp : expr) : varidset =
        | Fun (v, e) -> (SS.remove v (loop set e)) 
        | Let (v, e1, e2) -> (loop set (App (Fun (v, e2), e1)))
        | Letrec (v, e1, e2) -> (SS.remove v (loop set (App (Fun (v, e2), e1))))
-       | App (e1, e2) -> (SS.union (loop set e1) (loop set e2))) in
+       | App (e1, e2) -> (SS.union (loop set e1) (loop set e2))
+       | List e1 -> (match e1 with
+		     | [] -> set 
+		     | hd :: tl -> (SS.union (loop set hd) (loop set (List tl))))
+       | Concat (e1, e2) -> (SS.union (loop set e1) (loop set e2))) in
     loop empty_vars exp
 ;;  
 
@@ -109,7 +115,8 @@ let subst (var_name: varid) (repl: expr) (exp: expr) : expr =
                                          (match SS.mem s fv with
                                           | true -> let z = new_varname() in
                                                       Letrec(z, (subst' var_name' repl' e1), (subst' var_name' repl' (subst' s (Var z) e2)))
-                                          | false -> Letrec(s, (subst' var_name' repl' e1), (subst' var_name' repl' e2)))) in
+                                          | false -> Letrec(s, (subst' var_name' repl' e1), (subst' var_name' repl' e2)))) 
+    | _ -> raise Error in
   subst' var_name repl exp
 ;;
 
@@ -130,4 +137,14 @@ let rec exp_to_string (exp: expr) : string =
   | App (e1, e2) -> "App (" ^ (exp_to_string e1) ^ ", " ^ (exp_to_string e2) ^ ")"
   | Raise -> "Raise"          
   | Unassigned -> "Unassigned"                         
+  | List e -> let pl l = 
+		let front = "[" in
+		  let rec pl' l' = 
+		    (match l' with
+	       	     | [] -> "]"
+		     | hd :: [] -> (exp_to_string hd) ^ "]"
+                     | hd :: tl -> (exp_to_string hd) ^ ";" ^ (pl' tl)) in
+                  (front ^ pl' l) in
+	      (pl e)  
+  | Concat (e1, e2) -> (exp_to_string e1) ^ "::" ^ "[" ^ (exp_to_string e2) ^ "]"
 ;;

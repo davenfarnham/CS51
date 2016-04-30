@@ -41,13 +41,16 @@
 		       ("-", MINUS);
 		       ("*", TIMES);
 		       ("(", OPEN);
-		       (")", CLOSE)
+		       (")", CLOSE);
+		       ("[", LBRACK);
+		       ("]", RBRACK);
+		       ("::", CONCAT)
 		     ]
 }
 
 let digit = ['0'-'9']
 let id = ['a'-'z'] ['a'-'z' '0'-'9']*
-let sym = ['(' ')'] | (['+' '-' '*' '.' '=' '~' ';' '<' '>']+)
+let sym = ['(' ')' '[' ']'] | (['+' '-' '*' '.' '=' '~' ';' '<' '>' ':']+)
 
 rule token = parse
   | digit+ as inum

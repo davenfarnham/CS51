@@ -14,6 +14,8 @@ type expr =
   | Raise                                (* exceptions *)
   | Unassigned                           (* (temporarily) unassigned *)
   | App of expr * expr                   (* function applications *)
+  | List of (expr list)			 (* a list *) 
+  | Concat of expr * expr		 (* concat an expression onto a list *)
  and varid = string
 
 type varidset ;;
