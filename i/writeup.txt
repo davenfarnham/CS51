@@ -99,4 +99,26 @@ eval_l:
 			
 		  -> [Closure ((f, fun y -> y + x), [(x, 1)]); (x, 2)]
   
-	if you want to evaluate f, then, use the env within its closure.
+	if you want to evaluate f, then use the env within its closure.
+
+lists:
+
+	I had to add some code to the parser to deal with lists. The only real thing to remember is it's	
+	smarter to use left recursion instead of right. So, for example, when parsing lists:
+
+		list: exp
+		      | list SEMI exp
+
+	this will turn a list like [1;2;3;4] -> 
+
+		(((1; 2); 3); 4)
+
+	and since everything basically uses concat, this becomes:
+
+		Concat(Concat(Concat(Concat(1, 2), 3), 4), [])
+
+	this is better for the parser since, unlike right recursion which would create this:
+
+		(1; (2; (3; (4; []))))
+
+	it can start evaluating (1; 2) right away, and therefore fewer things have to be pushed onto the stack.

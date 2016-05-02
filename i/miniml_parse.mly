@@ -25,6 +25,7 @@
 %token LBRACK
 %token RBRACK
 %token CONCAT
+%token SEMI
 
 %left PLUS MINUS
 %left TIMES
@@ -41,6 +42,9 @@ input:	exp EOF			{ $1 }
 
 exp: 	exp expnoapp   		{ App($1, $2) }
 	| expnoapp		{ $1 }
+
+list:  	exp 			{ $1 }
+	| list SEMI exp		{ Concat($1, $3) }
 
 expnoapp: INT			{ Num $1 }
 	| TRUE			{ Bool true }
@@ -59,7 +63,8 @@ expnoapp: INT			{ Num $1 }
 	| FUNCTION ID DOT exp	{ Fun($2, $4) }	
 	| RAISE			{ Raise }
 	| OPEN exp CLOSE	{ $2 }
-	| LBRACK exp RBRACK	{ List [$2] }
+	| LBRACK RBRACK		{ (List []) }
+	| LBRACK list RBRACK	{ Concat ($2, (List [])) }
 	| exp CONCAT exp 	{ Concat ($1, $3) }
 ;
 

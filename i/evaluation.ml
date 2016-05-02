@@ -112,10 +112,40 @@ let unop_helper (s: string) : (int -> int) =
   | _ -> raise Error
 ;;
 
-let rec fold_left f l i = 
+let rec list_helper f l = 
   match l with
-  | [] -> i
-  | hd :: tl -> (f hd (fold_left f tl i))
+  | [] -> []
+  | hd :: tl -> (match (f hd) with
+		 | Env.Val hd' -> hd' :: (list_helper f tl)
+      		 | _ -> raise Error)
+;;
+
+let rec env_list_helper f l env = 
+  match l with
+  | [] -> []
+  | hd :: tl -> (match (f hd env) with
+		 | Env.Val hd' -> hd' :: (env_list_helper f tl env)
+      		 | _ -> raise Error)
+;;
+
+let concat_helper (c: expr) (acc: expr list) = 
+  (* concat is left recursive, list is right, so normalize *)
+  let rec flip c' = 
+    (match c' with
+     | Concat(e, Concat (e', l)) -> flip (Concat(Concat(e, e'), l))
+     | _ -> c') in
+
+  let rec loop c' acc' =
+    (match c' with
+     | Concat(Concat (e', l), (List _)) -> (loop (Concat (e', l)) acc')
+     | Concat(e, (List _)) -> [e]
+     | Concat(e, e') -> (loop e (e' :: acc')) 
+     | _ -> (c' :: acc')) in
+
+  let t = flip c in
+    (match t with
+     | Concat(_, List _) -> (loop t acc) (* make sure last expr is list *)
+     | _ -> raise Error)
 ;;
 
 (* evaluate using substitution *)
@@ -152,18 +182,8 @@ let rec eval_s exp =
   | Raise | Unassigned -> (Env.Val exp)
 
   (* lists *)
-  | List e -> Env.Val (List ((fold_left (fun x y -> print_string (exp_to_string x);(match eval_s x with
-				                     | Env.Val x' -> x' :: y
-					             | _ -> raise Error)) e [])))
-  | Concat (e, l) -> raise Error
-(*
-(match l with
-		      | List l' -> (match (eval_s e) with
-				    | Env.Val e' -> let [temp] = (e' :: [l']) in
-                                                      Env.Val (List temp)
-				    | _ -> raise Error)
-		      | _ -> raise Error)
-*)
+  | List e -> Env.Val (List (list_helper eval_s e))
+  | Concat (e, l) -> let t = (concat_helper exp []) in eval_s (List t) 
 ;;
 
 (* evaluate dynamically using environment; don't deal with closures yet *)
@@ -209,6 +229,10 @@ let rec eval_d exp env_ =
 				                 | Env.Closure _ -> raise Error) 	
 		    | _ -> raise AppException)
   | Raise | Unassigned -> (Env.Val exp)
+
+  (* lists *)
+  | List e -> Env.Val (List (env_list_helper eval_d e env_))
+  | Concat (e, l) -> let t = (concat_helper exp []) in eval_d (List t) env_
 ;;
 
 (* lexically scoped environment *)
@@ -271,5 +295,10 @@ let rec eval_l exp env_ =
 		    | _ -> raise AppException)
 
   | Raise | Unassigned -> (Env.Val exp)
- 
+
+  (* lists *)
+  | List e -> Env.Val (List (env_list_helper eval_l e env_))
+  | Concat (e, l) -> let t = (concat_helper exp []) in eval_l (List t) env_
+;;
+
 let evaluate = eval_t ;;

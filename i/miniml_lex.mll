@@ -44,7 +44,8 @@
 		       (")", CLOSE);
 		       ("[", LBRACK);
 		       ("]", RBRACK);
-		       ("::", CONCAT)
+		       ("::", CONCAT);
+		       (";", SEMI)
 		     ]
 }
 

@@ -116,7 +116,8 @@ let subst (var_name: varid) (repl: expr) (exp: expr) : expr =
                                           | true -> let z = new_varname() in
                                                       Letrec(z, (subst' var_name' repl' e1), (subst' var_name' repl' (subst' s (Var z) e2)))
                                           | false -> Letrec(s, (subst' var_name' repl' e1), (subst' var_name' repl' e2)))) 
-    | _ -> raise Error in
+    | List l -> List (List.map (fun x -> subst' var_name' repl' x) l)
+    | Concat(e, l) -> Concat(subst' var_name' repl' e, subst' var_name' repl' l) in
   subst' var_name repl exp
 ;;
 
@@ -146,5 +147,5 @@ let rec exp_to_string (exp: expr) : string =
                      | hd :: tl -> (exp_to_string hd) ^ ";" ^ (pl' tl)) in
                   (front ^ pl' l) in
 	      (pl e)  
-  | Concat (e1, e2) -> (exp_to_string e1) ^ "::" ^ "[" ^ (exp_to_string e2) ^ "]"
+  | Concat (e1, e2) -> "Concat" ^ (exp_to_string e1) ^ "::" ^ (exp_to_string e2)
 ;;

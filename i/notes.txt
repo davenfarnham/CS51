@@ -85,8 +85,3 @@ TODO:
 		   now [(x, 2)]. If you just extend the env, you'd get [(x, 2); (x, 1)]
 		   which isn't necessarily wrong, as long as your lookup function always
 		   takes from the front of the list first. 
-
-
-	(1) run through eval_s example: let rec f = fun x -> if x = 0 then x else x + f (x - 1) in f 4 ;; (* 10 *)
-
-	(2) implement lists 
