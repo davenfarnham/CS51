@@ -46,6 +46,21 @@ let _ = assert (take (insert (5, ["f"]) (insert (9, ["e"])
 					 		(Branch (Odd, (12, ["c"]), Branch (Even, (13, ["b"]), Leaf, Leaf), Leaf)))))						
 
 
+
+(* test search *)
+let _ = 
+  let rec fold_left l f i = 
+    match l with
+    | [] -> i
+    | hd :: tl -> (f hd (fold_left tl f i)) in
+
+  let fs = [(45, ["a"]); (13, ["b"]); ( 12, ["c"]); (16, ["d"]); (9, ["e"]); (5, ["f"])] in
+    let (_, decoding) = encode fs in
+      let s = search decoding [0;1;0;1;1;0;0;1;1;1;1;1;0;1;1;1;0;0] in
+        let s' = fold_left s (fun x y -> x ^ y) "" in
+          assert (s' = "abcdef")
+
+
 (* print out encoding *)
 let _ =
   let fs = [(45, ["a"]); (13, ["b"]); ( 12, ["c"]); (16, ["d"]); (9, ["e"]); (5, ["f"])] in

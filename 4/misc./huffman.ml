@@ -1,4 +1,11 @@
-(* Huffman encoding using priority queue *)
+(**** Huffman encoding using priority queue ****)
+
+(*
+ * Use a min-heap to create a binary tree. The binary heap in this implementation
+ * is such that the left tree is always filled first, but will only have, at most, 
+ * one more item in it than the right tree. This'll minimize the height and ensure 
+ * operations like insert and take (fix) run in log(n).
+ *)
 
 type balance = Even | Odd
 type tree = Empty | Leaf | Branch of balance * (int * string list) * tree * tree
@@ -89,18 +96,80 @@ let take (t: tree) : ((int * string list) * tree) option =
 					 | Some (v', r') -> (Some (min, fix (Branch (Odd, v', l, r'))))))
 ;;
 
+(* search through huffman tree *)
+let search (t: tree) (lst: int list) : (string list) = 
+  let rec loop t' lst' =
+    match t' with
+    | Leaf -> raise Error  
+    | Branch(_, v, Leaf, Leaf) -> let (_, s) = v in s @ (loop t lst')
+    | _ -> (match lst' with
+    	    | [] -> []
+      	    | 1 :: tl  -> (match t' with
+	          	   | Branch(_, _, _, r) -> loop r tl
+	             	   | _ -> raise Error)
+      	    | 0 :: tl -> (match t' with
+	      	     	  | Branch(_, _, l, _) -> loop l tl
+	             	  | _ -> raise Error)
+            | _ -> raise Error) in
+  loop t lst
+;;
+
 (* complexity goes downhill starting... now *)
+
+(*
+ * Whereas the above only dealt with trees, here I use ocaml's Map module
+ * to encode letters to their binary strings. For example, the map might have
+ * something like this:
+ *
+ *		"a" -> "10101"
+ *		"b" -> "101"
+ *		...
+ *
+ * Map creates a balanced binary tree, again ensuring O(log n) running time for insert and take.  
+ * 
+ *
+ * 		[("a", 45); ("b", 13); ("c", 12); ("d", 16); ("e", 9); ("f", 5)]
+ *
+ *
+ *					["abcdef"]
+ *				      /		   \
+ *				   ["a"]          ["bcdef"]
+ *					       /	     \
+ *					   ["bc"]	    ["def"]
+ *					  /      \	   /       \
+ *				       ["c"]     ["b"]  ["ef"]     ["d"]
+ *						       /      \
+ *						     ["f"]    ["e"]
+ *
+ * (1) First, take a list of tuples containing a (frequency * string list) and add them to the tree.
+ * This tree will use the above code, effectively creating a huffman tree. 
+ *
+ * (2) I also create a list of trees with these values of the form: Branch(Even, (Frequency * string list), Leaf, Leaf). 
+ *
+ * (3) In create_encoding, everytime I take something from the huffman tree O(log n) I have to add either a "1" or a "0" to that 
+ * string's association in the map. Finding the string in the map will be O(log n) while adding the "1" or "0" will 
+ * depend on the length of the string. In total: 
+ *
+ *			- taking from the tree: 		n * log(n) 
+ *			- adding to map: 			2 * (n * log(n))
+ * 			- finding in list			n^2
+ * 			- total:				n^2 + (3 * n * log(n)) = n^2
+ * 
+ * It was easy using the list_find method to create the tree (codes -> back to letters) but a better implementation
+ * could bring the asymptotic running time down from n^2 to n*log(n). 			
+ *
+ *)
 
 module Encoding = Map.Make(String)
 
-(* create tree from list *)
+(* create tree from list; O(nlog(n)) *)
 let rec add_to_tree lst = 
   match lst with
   | [] -> Empty
   | hd :: tl -> insert hd (add_to_tree tl)
 ;;
 
-(* list of tuples -> list of trees *)
+(* list of tuples -> list of trees, O(n) *)
 let rec treelist lst = 
   match lst with
   | [] -> []
@@ -153,9 +222,9 @@ let create_encoding t lst =
 	      | Some ((i, s), t'') -> (match t'' with 
 				       | Leaf | Empty -> tlst
 				       | _ -> (match take t'' with
-			                       | Some ((i', s'), tr) -> add_to_map s m "0"; (* dependent on length of s *)
+			                       | Some ((i', s'), tr) -> add_to_map s m "0"; 
 									add_to_map s' m "1";
-									let (l, tlst') = list_find tlst (i, s) in (* O(n) *)
+									let (l, tlst') = list_find tlst (i, s) in
 									  let (r, tlst'') = list_find tlst' (i', s') in 
 									    let combo = (Branch (Even, (i + i', s @ s'), l, r)) in
 									      (loop (insert (i + i', s @ s') tr) (combo :: tlst''))

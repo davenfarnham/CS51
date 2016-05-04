@@ -1,4 +1,4 @@
-all: testing huffman trees code
+all: testing huffman trees code compress
 	corebuild code.native
 	corebuild trees.native
 	corebuild huffman.native

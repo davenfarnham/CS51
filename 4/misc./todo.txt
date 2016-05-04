@@ -1,0 +1,4 @@
+- user input of files
+- frequency table for characters
+- read in multiple lines
+- change n^2 to something else
