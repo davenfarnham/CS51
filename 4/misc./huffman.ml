@@ -162,18 +162,26 @@ let search (t: tree) (lst: int list) : (string list) =
 
 module Encoding = Map.Make(String)
 
+module ListString : Map.OrderedType with type t = (string list) = 
+struct 
+  type t = string list
+
+  let rec compare l r =
+    match (l, r) with
+    | ([], []) -> 0
+    | (_ :: _, []) -> 1
+    | ([], _ :: _) -> -1 
+    | (hd :: tl, hd' :: tl') -> let c = String.compare hd hd' in 
+				  if c = 0 then compare tl tl' else c
+end
+
+module Huffman = Map.Make(ListString)
+
 (* create tree from list; O(nlog(n)) *)
 let rec add_to_tree lst = 
   match lst with
   | [] -> Empty
   | hd :: tl -> insert hd (add_to_tree tl)
-;;
-
-(* list of tuples -> list of trees, O(n) *)
-let rec treelist lst = 
-  match lst with
-  | [] -> []
-  | hd :: tl -> (Branch (Even, hd, Leaf, Leaf)) :: treelist tl
 ;;
 
 (* print out tree contents df traversal *)
@@ -202,43 +210,35 @@ let rec add_to_map l m path =
 	        else ((m := Encoding.add hd path !m); add_to_map tl m path)
 ;;
 
-(* find a tree in a treelist *)
-let rec list_find l a =
-  match l with
-  | [] -> raise Error
-  | Branch(_, v, _, _) as br :: tl -> if v = a then (br, tl) else
-				      (match list_find tl a with
-				       | (v', tl') -> (v', br :: tl'))
-  | _ -> raise Error
-;;
-
 (* create a mapping for the huffman codes *)
-let create_encoding t lst = 
+let create_encoding t = 
   let m = ref (Encoding.empty) in
-    let rec loop t' tlst = 
+  let hf = ref (Huffman.empty) in 
+    let rec loop t' l = 
       match t' with
-      | Leaf | Empty -> tlst
+      | Leaf | Empty -> l
       | _ -> (match take t' with
 	      | Some ((i, s), t'') -> (match t'' with 
-				       | Leaf | Empty -> tlst
+				       | Leaf | Empty -> l
 				       | _ -> (match take t'' with
 			                       | Some ((i', s'), tr) -> add_to_map s m "0"; 
 									add_to_map s' m "1";
-									let (l, tlst') = list_find tlst (i, s) in
-									  let (r, tlst'') = list_find tlst' (i', s') in 
-									    let combo = (Branch (Even, (i + i', s @ s'), l, r)) in
-									      (loop (insert (i + i', s @ s') tr) (combo :: tlst''))
-				               | _ -> tlst)) 
-	      | _ -> tlst) in
-  let decode = loop t lst in (!m, decode)
+									if Huffman.mem s !hf then () 
+									else (hf := Huffman.add s (Branch (Even, (i, s), Leaf, Leaf)) !hf);
+									if Huffman.mem s' !hf then ()
+									else (hf := Huffman.add s' (Branch (Even, (i', s'), Leaf, Leaf)) !hf);
+									let l = Huffman.find s !hf in
+									  let r = Huffman.find s' !hf in
+									    (hf := Huffman.add (s @ s') (Branch (Even, (i + i', s @ s'), l, r)) !hf);
+									      loop (insert (i + i', s @ s') tr) (s @ s')
+				               | _ -> l)) 
+	      | _ -> l) in
+  let index = loop t [] in (!m, (Huffman.find index !hf))
 ;;
 
 (* return tuple (tree codes -> letters, mapping letters -> codes) *)
 let encode l = 
   let t = add_to_tree l in
-    let tlst = treelist l in
-      let (tr, code) = create_encoding t tlst in
-        match code with
-        | [] -> raise Error
-	| hd :: _ -> (tr, hd)
+    let (tr, code) = create_encoding t in
+      (tr, code)
 ;;
