@@ -29,6 +29,23 @@ let switch (b: balance) : balance =
   | _ -> Odd
 ;;
 
+(* print out tree contents df traversal *)
+let rec depth (t: tree) : unit =
+  match t with
+  | Leaf | Empty -> ()
+  | Branch (_, (i, s), l, r) -> print_string ((string_of_float i) ^ "," ^ (List.fold_left (fun x y -> x ^ y) "" s) ^ "\n"); depth l; depth r
+;; 
+
+(* print out tree contents bf traversal *)
+let breadth (t: tree) : unit = 
+  let rec loop lst = 
+    match lst with
+    | [] | Empty :: _ -> ()
+    | Leaf :: tl -> loop tl
+    | Branch (_, (i, s), l, r) :: tl -> print_string ((string_of_float i) ^ "," ^ (List.fold_left (fun x y -> x ^ y) "" s) ^ "\n"); loop (tl @ (l :: [r])) in
+  loop [t]
+;;
+
 (* insert a number into tree; should run in O(log n) *)
 let rec insert ((i, s): (float * (string list))) (t: tree) : tree =
   match t with
@@ -61,10 +78,13 @@ let rec fix (t: tree) : tree =
   match t with
   | Leaf | Empty -> raise Fix_Error
   | Branch (_, _, Leaf, Leaf) -> t
-  | Branch (Odd, (num, lst), l, Leaf) -> (match l with
+  
+  (* balance used to be only Odd -> changed it to deal with equal probabilities *)
+  | Branch (_, (num, lst), l, Leaf) -> (match l with
 				          | Leaf | Empty -> raise Fix_Error
 			                  | Branch (b, (num', lst'), l', r') -> if num' < num then Branch(Odd, (num', lst'), Branch (b, (num, lst), l', r'), Leaf)
 									        else Branch (Odd, (num, lst), fix l, Leaf))
+
   (* this is somewhat complicated since insert doesn't guarantee l < r *)
   | Branch (bal, (num, lst), l, r) -> let (i, _) = get_node l in
 				        let (i', _) = get_node r in 
@@ -101,7 +121,7 @@ let search (t: tree) (lst: int list) : (string list) =
   let rec loop t' lst' =
     match t' with
     | Leaf -> raise Error  
-    | Branch(_, v, Leaf, Leaf) -> let (_, s) = v in s @ (loop t lst')
+    | Branch(_, v, Leaf, Leaf) -> let (_, s) = v in s @ (loop t lst') 
     | _ -> (match lst' with
     	    | [] -> []
       	    | 1 :: tl  -> (match t' with
@@ -181,41 +201,27 @@ let rec add_to_tree lst =
   | hd :: tl -> insert hd (add_to_tree tl)
 ;;
 
-(* print out tree contents df traversal *)
-let rec depth (t: tree) : unit =
-  match t with
-  | Leaf | Empty -> ()
-  | Branch (_, (i, s), l, r) -> print_string ((string_of_float i) ^ "," ^ (List.fold_left (fun x y -> x ^ y) "" s) ^ "\n"); depth l; depth r
-;; 
-
-(* print out tree contents bf traversal *)
-let breadth (t: tree) : unit = 
-  let rec loop lst = 
-    match lst with
-    | [] | Empty :: _ -> ()
-    | Leaf :: tl -> loop tl
-    | Branch (_, (i, s), l, r) :: tl -> print_string ((string_of_float i) ^ "," ^ (List.fold_left (fun x y -> x ^ y) "" s) ^ "\n"); loop (tl @ (l :: [r])) in
-  loop [t]
-;;
 
 (* add value to all chars in list *)
 let rec add_to_map l m path = 
   match l with
   | [] -> ()
-  | hd :: tl -> if (Encoding.mem hd !m) then (let value = (Encoding.find hd !m) in
+  | hd :: tl -> print_string (hd ^ " " ^ path); print_string "\n"; if (Encoding.mem hd !m) then (let value = (Encoding.find hd !m) in
 					        (m := Encoding.add hd (path ^ value) !m); add_to_map tl m path)
 	        else ((m := Encoding.add hd path !m); add_to_map tl m path)
 ;;
 
 (* create a mapping for the huffman codes *)
 let create_encoding t = 
+  (* map encoding *)
   let m = ref (Encoding.empty) in
+  (* huffman tree *)
   let hf = ref (Huffman.empty) in 
     let rec loop t' l = 
       match t' with
       | Leaf | Empty -> l
       | _ -> (match take t' with
-	      | Some ((i, s), t'') -> (match t'' with 
+	      | Some ((i, s), t'') -> print_string "breadth: "; breadth t''; print_string "\n"; (match t'' with 
 				       | Leaf | Empty -> l
 				       | _ -> (match take t'' with
 			                       | Some ((i', s'), tr) -> add_to_map s m "0"; 
@@ -236,6 +242,7 @@ let create_encoding t =
 (* return tuple (tree codes -> letters, mapping letters -> codes) *)
 let encode l = 
   let t = add_to_tree l in
+   breadth t; print_string "\n";
     let (tr, code) = create_encoding t in
       (tr, code)
 ;;

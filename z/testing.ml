@@ -1,5 +1,4 @@
 open Huffman
-open Zip
 
 exception Error
 
@@ -60,11 +59,11 @@ let _ =
         let s' = fold_left s (fun x y -> x ^ y) "" in
           assert (s' = "abcdef")
 
-
+(*
 (* test bit_helper *)
-let _ = assert (bit_helper 0 "101" 0 0 = (5, 3))
-let _ = assert (bit_helper 0 "11101" 0 0 = (29, 5))
-
+let _ = assert (Zip.bit_helper 0 "101" 0 0 = (5, 3))
+let _ = assert (Zip.bit_helper 0 "11101" 0 0 = (29, 5))
+*)
 
 (* print out encoding *)
 let _ =
@@ -72,11 +71,11 @@ let _ =
     let (encoding, decoding) = encode fs in
       Encoding.iter (fun x y -> print_string (x ^ ":" ^ y ^ "\n")) encoding; (breadth decoding)
 
-
+(*
 (* test compression *)
 let _ =
   let fs = [(45., ["a"]); (13., ["b"]); (12., ["c"]); (16., ["d"]); (9., ["e"]); (5., ["f"])] in
     let (encoding, _) = encode fs in
-      assert (bit_manip "fabcdef" 0 [(0, 0)] 0 encoding = [(3237852, 22)]);
-      assert (bit_manip "abcdefabcdefabcdef" 0 [(0, 0)] 0 encoding = [(3237852, 22); (1509365373, 32)])
-
+      assert (Zip.bit_manip "fabcdef" 0 [(0, 0)] 0 encoding = [(3237852, 22)]);
+      assert (Zip.bit_manip "abcdefabcdefabcdef" 0 [(0, 0)] 0 encoding = [(3237852, 22); (1509365373, 32)])
+*)

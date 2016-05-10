@@ -4,6 +4,7 @@ open Huffman
 open Freq
 
 exception Error
+exception NotEncoded
 exception CmdLineError
 
 (*** codes -> writing out bytes (zip) ***)
@@ -27,7 +28,7 @@ let rec bit_manip (s: string) (size: int) (blst: (int * int) list) (l: int) m : 
 						  | [] -> raise Error
 						  | (hd, hd') :: tl -> let (num, space) = bit_helper hd value 0 hd' in
 								         bit_manip s space ((num, space) :: tl) (l + 1) m)) 
-	else raise Error)
+	else raise NotEncoded)
 ;;
 
 (* print out bytes to file *)
@@ -48,15 +49,16 @@ let zip =
        	          | _ -> (print_string "/zip.native [file to zip]\n"); raise CmdLineError) in 
 
   (* create encodings *)
-  let (encoding, _) = encode !frequencies in
+  let (encoding, _) = encode !frequencies in Encoding.iter (fun x y -> print_string x; print_int (Char.code (String.get x 0)); print_string (" " ^ y ^ "\n")) encoding;
 
   (* zip *)
   let f = open_in name in
     let f' = open_out (name ^ ".zip") in
       try
         while true do
-          let s = (input_line f) ^ "\n" in (print_string s);
+          let s = (input_line f) ^ "\n" in
             let lst = bit_manip s 0 [(0, 0)] 0 encoding in
-              print_list lst f'
+              print_list (List.rev lst) f'
         done
       with End_of_file -> close_in f; close_out f';
+;;

@@ -32,7 +32,7 @@ let bit_to_str (s: string) : (int list) =
       let rec outer t s' =
         if t >= total then []
         else (let c' = (chunk 4 (String.sub s' t 5)) in 
-	       c' @ (outer (t + 5) s')) in
+	       (outer (t + 5) s') @ c') in
       outer 0 s
 ;;
 
@@ -46,6 +46,8 @@ let unzip =
     (escaped := Escaped.add "n" '\n' !escaped);
     (escaped := Escaped.add "t" '\t' !escaped);
     (escaped := Escaped.add "b" '\b' !escaped);
+    (escaped := Escaped.add "\'" '\'' !escaped);
+    (escaped := Escaped.add "\"" '\"' !escaped);
 
   (* check cmd line args *)
   let frequencies = ref [] in
@@ -68,16 +70,9 @@ let unzip =
                 let rec loop l' =
                   (match l' with
                    | [] -> ()
-                   | hd :: tl -> print_string hd; loop tl) in
-(*
-(match (loop tl) with
-				  | () ->  print_string hd)) in
-
-let r = Str.regexp "\\\\[a-z]" in (print_string hd);
-				   (if Str.string_match r hd 0 then (print_string (String.sub hd 1 1); let c = Escaped.find (String.sub hd 1 1) !escaped in (output_char f' c))
+                   | hd :: tl -> let r = Str.regexp "\\\\[a-z\'\"]" in
+				   (if Str.string_match r hd 0 then (output_char f' (Escaped.find (String.sub hd 1 1) !escaped))
 				   else output_string f' hd); loop tl) in
-  
-*)
                 loop s'
         done
       with End_of_file -> close_in f; close_out f'

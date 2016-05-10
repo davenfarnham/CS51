@@ -1,4 +1,3 @@
-- unescape strings like "\n"
 - spaces
-- printing backwards
+- seems to crash on long strings? with lots of spaces?
 - packing decode so you don't have to run again
