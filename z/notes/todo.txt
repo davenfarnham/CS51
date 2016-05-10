@@ -1,3 +1,4 @@
 - unescape strings like "\n"
 - spaces
 - printing backwards
+- packing decode so you don't have to run again

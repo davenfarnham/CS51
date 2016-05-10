@@ -1,10 +1,4 @@
-all: trees code huffman zip unzip freq testing
-
-code:
-	corebuild code.native
-
-trees:
-	corebuild trees.native
+all: huffman zip unzip freq testing
 
 huffman:
 	corebuild huffman.native
