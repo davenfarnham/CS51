@@ -8,7 +8,7 @@
  *)
 
 type balance = Even | Odd
-type tree = Empty | Leaf | Branch of balance * (int * string list) * tree * tree
+type tree = Empty | Leaf | Branch of balance * (float * string list) * tree * tree
 
 exception Error
 exception Get_Last_Error
@@ -16,7 +16,7 @@ exception Get_Node_Error
 exception Fix_Error
 
 (* get top node of tree *)
-let get_node (t: tree) : (int * string list) =
+let get_node (t: tree) : (float * string list) =
   match t with
   | Empty | Leaf -> raise Get_Node_Error
   | Branch (_, v, _, _) -> v
@@ -30,7 +30,7 @@ let switch (b: balance) : balance =
 ;;
 
 (* insert a number into tree; should run in O(log n) *)
-let rec insert ((i, s): (int * (string list))) (t: tree) : tree =
+let rec insert ((i, s): (float * (string list))) (t: tree) : tree =
   match t with
   | Leaf | Empty -> Branch (Even, (i, s), Leaf, Leaf) 
   | Branch (Even, v, l, r) -> (match v with
@@ -42,7 +42,7 @@ let rec insert ((i, s): (int * (string list))) (t: tree) : tree =
 ;;		
 
 (* take last element from a tree; should run in O(log n) *)
-let rec get_last (t: tree) : ((int * string list) * tree) option =
+let rec get_last (t: tree) : ((float * string list) * tree) option =
   match t with
   | Empty | Leaf -> None
   | Branch (_, v, Leaf, Leaf) -> (Some (v, Leaf))
@@ -83,7 +83,7 @@ let rec fix (t: tree) : tree =
 ;;
 
 (* take element with lowest priority and fix tree *)
-let take (t: tree) : ((int * string list) * tree) option = 
+let take (t: tree) : ((float * string list) * tree) option = 
   match t with
   | Empty | Leaf -> None
   | Branch (b, v, l, r) -> let min = v in
@@ -144,24 +144,21 @@ let search (t: tree) (lst: int list) : (string list) =
  * (1) First, take a list of tuples containing a (frequency * string list) and add them to the tree.
  * This tree will use the above code, effectively creating a huffman tree. 
  *
- * (2) I also create a list of trees with these values of the form: Branch(Even, (Frequency * string list), Leaf, Leaf). 
- *
- * (3) In create_encoding, everytime I take something from the huffman tree O(log n) I have to add either a "1" or a "0" to that 
+ * (2) In create_encoding, everytime I take something from the huffman tree O(log n) I have to add either a "1" or a "0" to that 
  * string's association in the map. Finding the string in the map will be O(log n) while adding the "1" or "0" will 
  * depend on the length of the string. In total: 
  *
  *			- taking from the tree: 		n * log(n) 
- *			- adding to map: 			2 * (n * log(n))
- * 			- finding in list			n^2
- * 			- total:				n^2 + (3 * n * log(n)) = n^2
+ *			- adding to map: 			n * log(n)
+ *			- creating huffman tree			~ (n * log(n))	
+ * 			- total asymptotic:			n * log(n)
  * 
- * It was easy using the list_find method to create the tree (codes -> back to letters) but a better implementation
- * could bring the asymptotic running time down from n^2 to n*log(n). 			
  *
  *)
 
 module Encoding = Map.Make(String)
 
+(* new module to pass into Map.Make for ordering string lists *)
 module ListString : Map.OrderedType with type t = (string list) = 
 struct 
   type t = string list
@@ -188,7 +185,7 @@ let rec add_to_tree lst =
 let rec depth (t: tree) : unit =
   match t with
   | Leaf | Empty -> ()
-  | Branch (_, (i, s), l, r) -> print_string ((string_of_int i) ^ "," ^ (List.fold_left (fun x y -> x ^ y) "" s) ^ "\n"); depth l; depth r
+  | Branch (_, (i, s), l, r) -> print_string ((string_of_float i) ^ "," ^ (List.fold_left (fun x y -> x ^ y) "" s) ^ "\n"); depth l; depth r
 ;; 
 
 (* print out tree contents bf traversal *)
@@ -197,7 +194,7 @@ let breadth (t: tree) : unit =
     match lst with
     | [] | Empty :: _ -> ()
     | Leaf :: tl -> loop tl
-    | Branch (_, (i, s), l, r) :: tl -> print_string ((string_of_int i) ^ "," ^ (List.fold_left (fun x y -> x ^ y) "" s) ^ "\n"); loop (tl @ (l :: [r])) in
+    | Branch (_, (i, s), l, r) :: tl -> print_string ((string_of_float i) ^ "," ^ (List.fold_left (fun x y -> x ^ y) "" s) ^ "\n"); loop (tl @ (l :: [r])) in
   loop [t]
 ;;
 
@@ -229,8 +226,8 @@ let create_encoding t =
 									else (hf := Huffman.add s' (Branch (Even, (i', s'), Leaf, Leaf)) !hf);
 									let l = Huffman.find s !hf in
 									  let r = Huffman.find s' !hf in
-									    (hf := Huffman.add (s @ s') (Branch (Even, (i + i', s @ s'), l, r)) !hf);
-									      loop (insert (i + i', s @ s') tr) (s @ s')
+									    (hf := Huffman.add (s @ s') (Branch (Even, (i +. i', s @ s'), l, r)) !hf);
+									      loop (insert (i +. i', s @ s') tr) (s @ s')
 				               | _ -> l)) 
 	      | _ -> l) in
   let index = loop t [] in (!m, (Huffman.find index !hf))

@@ -1,8 +1,4 @@
-all: testing huffman trees code compress
-	corebuild code.native
-	corebuild trees.native
-	corebuild huffman.native
-	corebuild testing.native
+all: trees code huffman zip unzip freq testing
 
 code:
 	corebuild code.native
@@ -13,11 +9,17 @@ trees:
 huffman:
 	corebuild huffman.native
 
-compress:
-	ocamlbuild -use-ocamlfind -tag thread -pkg core,batteries compress.native
+zip:
+	ocamlbuild -use-ocamlfind -tag thread -pkg core,batteries zip.native
+
+unzip:
+	ocamlbuild -use-ocamlfind -tag thread -pkg core,batteries unzip.native
+
+freq:
+	ocamlbuild -use-ocamlfind -tag thread -pkg core,batteries freq.native
 
 testing:
-	corebuild testing.native
+	ocamlbuild -use-ocamlfind -tag thread -pkg core,batteries testing.native
 
 clean:
 	rm -rf _build *.native *.ml~
