@@ -20,10 +20,11 @@ let str_to_int s =
 
 (* take a string and turn it into a list of ints, which is its binary representation *)
 let bit_to_str (s: string) : (int list) =
+  print_string "Length of line "; print_int (String.length s); print_string "\n";
   let total = String.length s in 
     let chunk loc str =
-      let length = int_of_char (String.get str loc) in 
-        let int_rep = str_to_int (String.sub str 0 4) in
+      let length = int_of_char (String.get str loc) in print_string "Bits used in string "; print_int length; print_string "\n"; 
+	let int_rep = str_to_int (String.sub str 0 4) in
           let rec inner i count = 
             if count = length then []
 	    else (let check = 1 land i in 
@@ -47,7 +48,7 @@ let unzip =
     (escaped := Escaped.add "t" '\t' !escaped);
     (escaped := Escaped.add "b" '\b' !escaped);
     (escaped := Escaped.add "\'" '\'' !escaped);
-    (escaped := Escaped.add "\"" '\"' !escaped);
+    (escaped := Escaped.add "\"" '\"' !escaped); 
 
   (* check cmd line args *)
   let frequencies = ref [] in

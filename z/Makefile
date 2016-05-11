@@ -16,4 +16,4 @@ testing:
 	ocamlbuild -use-ocamlfind -tag thread -pkg core,batteries testing.native
 
 clean:
-	rm -rf _build *.native *.ml~
+	rm -rf _build *.native *.ml~ texts/*.zip

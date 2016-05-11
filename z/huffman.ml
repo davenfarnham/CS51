@@ -36,13 +36,22 @@ let rec depth (t: tree) : unit =
   | Branch (_, (i, s), l, r) -> print_string ((string_of_float i) ^ "," ^ (List.fold_left (fun x y -> x ^ y) "" s) ^ "\n"); depth l; depth r
 ;; 
 
+(* for debugging *)
+let bal_to_string (b: balance) : string = 
+  match b with
+  | Odd -> "Odd"
+  | Even -> "Even"
+;;
+
 (* print out tree contents bf traversal *)
 let breadth (t: tree) : unit = 
   let rec loop lst = 
     match lst with
     | [] | Empty :: _ -> ()
     | Leaf :: tl -> loop tl
-    | Branch (_, (i, s), l, r) :: tl -> print_string ((string_of_float i) ^ "," ^ (List.fold_left (fun x y -> x ^ y) "" s) ^ "\n"); loop (tl @ (l :: [r])) in
+    | Branch (b, (i, s), l, r) :: tl -> print_string ((bal_to_string b) ^ "," ^ 
+						      (string_of_float i) ^ "," ^ 
+						      (List.fold_left (fun x y -> x ^ y) "" s) ^ "\n"); loop (tl @ (l :: [r])) in
   loop [t]
 ;;
 
@@ -70,7 +79,7 @@ let rec get_last (t: tree) : ((float * string list) * tree) option =
   | Branch (Even, v, l, r) -> (match get_last r with
 			       | None -> None
 			       | Some (v', Leaf) -> (Some (v', Branch (Odd, v, l, Leaf)))
-			       | Some (v', r') -> (Some (v', Branch (Even, v, l, r'))))
+			       | Some (v', r') -> (Some (v', Branch (Odd, v, l, r'))))
 ;;
 
 (* fix a tree so that it's a min heap again *)
@@ -80,7 +89,7 @@ let rec fix (t: tree) : tree =
   | Branch (_, _, Leaf, Leaf) -> t
   
   (* balance used to be only Odd -> changed it to deal with equal probabilities *)
-  | Branch (_, (num, lst), l, Leaf) -> (match l with
+  | Branch (Odd, (num, lst), l, Leaf) -> (match l with
 				          | Leaf | Empty -> raise Fix_Error
 			                  | Branch (b, (num', lst'), l', r') -> if num' < num then Branch(Odd, (num', lst'), Branch (b, (num, lst), l', r'), Leaf)
 									        else Branch (Odd, (num, lst), fix l, Leaf))
@@ -88,7 +97,7 @@ let rec fix (t: tree) : tree =
   (* this is somewhat complicated since insert doesn't guarantee l < r *)
   | Branch (bal, (num, lst), l, r) -> let (i, _) = get_node l in
 				        let (i', _) = get_node r in 
-					  let b = if i < i' then Odd else Even in
+					  let b = if i < i' || (i = i' && bal = Odd) then Odd else Even in
 					    (match b with
 					     | Odd -> (match l with
 				       		       | Leaf | Empty -> raise Fix_Error
@@ -201,12 +210,11 @@ let rec add_to_tree lst =
   | hd :: tl -> insert hd (add_to_tree tl)
 ;;
 
-
 (* add value to all chars in list *)
 let rec add_to_map l m path = 
   match l with
   | [] -> ()
-  | hd :: tl -> print_string (hd ^ " " ^ path); print_string "\n"; if (Encoding.mem hd !m) then (let value = (Encoding.find hd !m) in
+  | hd :: tl -> if (Encoding.mem hd !m) then (let value = (Encoding.find hd !m) in
 					        (m := Encoding.add hd (path ^ value) !m); add_to_map tl m path)
 	        else ((m := Encoding.add hd path !m); add_to_map tl m path)
 ;;
@@ -221,7 +229,7 @@ let create_encoding t =
       match t' with
       | Leaf | Empty -> l
       | _ -> (match take t' with
-	      | Some ((i, s), t'') -> print_string "breadth: "; breadth t''; print_string "\n"; (match t'' with 
+	      | Some ((i, s), t'') -> (match t'' with 
 				       | Leaf | Empty -> l
 				       | _ -> (match take t'' with
 			                       | Some ((i', s'), tr) -> add_to_map s m "0"; 
@@ -233,7 +241,8 @@ let create_encoding t =
 									let l = Huffman.find s !hf in
 									  let r = Huffman.find s' !hf in
 									    (hf := Huffman.add (s @ s') (Branch (Even, (i +. i', s @ s'), l, r)) !hf);
-									      loop (insert (i +. i', s @ s') tr) (s @ s')
+									      let tr' = (insert (i +. i', s @ s') tr) in  
+									        loop tr' (s @ s')
 				               | _ -> l)) 
 	      | _ -> l) in
   let index = loop t [] in (!m, (Huffman.find index !hf))
@@ -242,7 +251,6 @@ let create_encoding t =
 (* return tuple (tree codes -> letters, mapping letters -> codes) *)
 let encode l = 
   let t = add_to_tree l in
-   breadth t; print_string "\n";
     let (tr, code) = create_encoding t in
       (tr, code)
 ;;

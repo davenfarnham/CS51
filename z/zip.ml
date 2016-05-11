@@ -48,8 +48,10 @@ let zip =
          	  | 2 -> (frequencies := (freq_table Sys.argv.(1))); Sys.argv.(1)
        	          | _ -> (print_string "/zip.native [file to zip]\n"); raise CmdLineError) in 
 
+  Freq.print_freq ();
+
   (* create encodings *)
-  let (encoding, _) = encode !frequencies in Encoding.iter (fun x y -> print_string x; print_int (Char.code (String.get x 0)); print_string (" " ^ y ^ "\n")) encoding;
+  let (encoding, _) = encode !frequencies in 
 
   (* zip *)
   let f = open_in name in
