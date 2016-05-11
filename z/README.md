@@ -6,9 +6,9 @@ A basic implementation of Huffman compression using a priority queue. Of the 5 s
 
 ## Usage
 
-To zip: 	./zip.native [name of file]
+To zip: 	**./zip.native [name of file]**
 
-To unzip:	./unzip.native [name of original file] [name of file to unzip] [name of unzipped file]
+To unzip:	**./unzip.native [name of original file] [name of file to unzip] [name of unzipped file]***
 
 ## TODOs
 
