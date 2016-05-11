@@ -20,11 +20,10 @@ let str_to_int s =
 
 (* take a string and turn it into a list of ints, which is its binary representation *)
 let bit_to_str (s: string) : (int list) =
-  print_string "Length of line "; print_int (String.length s); print_string "\n";
   let total = String.length s in 
     let chunk loc str =
-      let length = int_of_char (String.get str loc) in print_string "Bits used in string "; print_int length; print_string "\n"; 
-	let int_rep = str_to_int (String.sub str 0 4) in
+      let length = int_of_char (String.get str loc) in 
+	let int_rep = str_to_int (String.sub str 0 4) in 
           let rec inner i count = 
             if count = length then []
 	    else (let check = 1 land i in 
@@ -63,17 +62,18 @@ let unzip =
   (* unzip *)
   let f = open_in i in
     let f' = open_out o in 
+      let line = ref "" in 
       try
         while true do
-          let s = input_line f in
-            let l = List.rev (bit_to_str s) in
-              let s' = search decoding l in
-                let rec loop l' =
-                  (match l' with
-                   | [] -> ()
-                   | hd :: tl -> let r = Str.regexp "\\\\[a-z\'\"]" in
-				   (if Str.string_match r hd 0 then (output_char f' (Escaped.find (String.sub hd 1 1) !escaped))
-				   else output_string f' hd); loop tl) in
-                loop s'
+          (line := !line ^ ((input_line f) ^ "\n"));
         done
-      with End_of_file -> close_in f; close_out f'
+      with End_of_file -> let stemp = (String.length !line - 1) in 
+            		    let l = List.rev (bit_to_str (String.sub !line 0 stemp)) in 
+              		      let s' = search decoding l in
+                		let rec loop l' =
+    	              		  (match l' with
+                   		   | [] -> ()
+                   		   | hd :: tl -> let r = Str.regexp "\\\\[a-z\'\"]" in
+				   		  (if Str.string_match r hd 0 then (output_char f' (Escaped.find (String.sub hd 1 1) !escaped))
+				   		  else output_string f' hd); loop tl) in
+                	        loop s'; close_in f; close_out f'

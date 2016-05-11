@@ -48,8 +48,6 @@ let zip =
          	  | 2 -> (frequencies := (freq_table Sys.argv.(1))); Sys.argv.(1)
        	          | _ -> (print_string "/zip.native [file to zip]\n"); raise CmdLineError) in 
 
-  Freq.print_freq ();
-
   (* create encodings *)
   let (encoding, _) = encode !frequencies in 
 
@@ -58,7 +56,7 @@ let zip =
     let f' = open_out (name ^ ".zip") in
       try
         while true do
-          let s = (input_line f) ^ "\n" in
+          let s = (input_line f) ^ "\n" in 
             let lst = bit_manip s 0 [(0, 0)] 0 encoding in
               print_list (List.rev lst) f'
         done
