@@ -132,7 +132,7 @@ let concat_helper (c: expr) (acc: expr list) =
   (* concat is left recursive, list is right, so normalize *)
   let rec flip c' = 
     (match c' with
-     | Concat(e, Concat (e', l)) -> flip (Concat(flip (Concat(e, e')), l))
+     | Concat(e, Concat (e', l)) -> (Concat(flip (Concat(e, e')), l))
      | _ -> c') in
 
   let rec loop c' acc' =
