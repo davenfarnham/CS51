@@ -956,7 +956,7 @@ let _ = assert (selectionsort [-5;-4;2;1;3] = [-5;-4;1;2;3])
 module type SORT =
 sig
     type c 
-    val sort : c list ->  c list 
+    val sort : c list -> c list 
 end
 
 (* functor to take in a comparable module and return a sort module *)
@@ -1015,6 +1015,13 @@ let rec create_list (size: int) (bound: int) : (int list) =
   | _ -> (Random.int bound) :: create_list (size - 1) bound
 ;;
 
+(* create backwards list *)
+let rec create_backwards_list (size: int) (bound: int) : (int list) =
+  match size with
+  | 0 -> []
+  | _ -> size :: create_backwards_list (size - 1) bound
+;;
+
 (* print out contents to file *)
 let rec print_to_file (f: out_channel) (lst: int list) : unit = 
   match lst with
@@ -1022,20 +1029,11 @@ let rec print_to_file (f: out_channel) (lst: int list) : unit =
   | hd :: tl -> fprintf f "%i " hd; print_to_file f tl
 ;; 
 
-(*
-(* run sort multiple times, printing out time and list size to .csv *)
-let _ = 
-  let file = "test.csv" in
-    let oc = open_out file in 
-      print_to_file oc (SFunInt.sort (create_list 20 20))
-;;
-*)
-
 (* s = initial size; e = # of iterations; f = out file; srt = kind of sort *)
 let rec check (s: int) (e: int) (f: out_channel) srt : unit = 
   match e with
   | 0 -> (fprintf f "\n")
-  | _ -> let l = create_list s s in
+  | _ -> let l = create_list s s in (* create_list -> random *)
            let t = Time.now () in
              ignore(srt l);
              let t' = Time.now () in
@@ -1052,10 +1050,10 @@ let _ =
     		  let oc = open_out file in 
 		    match funs with
 		    | [] -> raise Error
-		    | hd' :: tl' -> check 2 15 oc hd';
+		    | hd' :: tl' -> check 128 10 oc hd';
         	      	            (Out_channel.close oc); loop tl tl' in (* deals with exceptions *)
   let l = [heapsort; treesort; selectionsort] in
-    loop ["heapsort.csv"; "treesort.csv"; "selectionsort.csv"] l
+    loop [ "heapsort.csv"; "treesort.csv"; "selectionsort.csv"] l
 ;;
 
 (*>* Problem N.2 *>*)
