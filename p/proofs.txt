@@ -1,0 +1,120 @@
+NAME:
+LOGIN:
+
+Part 2, Assignment #4, COS 326
+------------------------------
+
+Part 2.1: 
+---------
+
+For each of the following, either:
+ * explain in a sentence why the named function is total, or
+ * give a counter-example showing it is not total.
+
+(a) inc:
+
+(b) biginc:
+ 
+(c) bigdiv:
+
+(d) search:
+
+(e) twice:
+
+(f) gen:
+
+Part 2.2:
+--------
+
+Prove that for all a, b, c : complex,
+
+cadd a (cadd b c) == cadd (cadd a b) c
+
+Proof:
+
+
+
+
+
+
+
+Part 2.3: 
+---------
+
+Prove that for all integer lists xs and ys,
+max (maxs xs) (maxs ys) == (maxs (append xs ys)).
+
+Clearly justify each step of your proof.
+
+Proof:  By induction on the structure of the list xs.
+
+case xs == []:
+
+To show:
+
+Proof:
+
+
+
+
+
+
+case xs == hd::tail:
+
+IH:   
+
+To show:   
+
+Proof:
+
+
+
+QED!
+
+Part 2.4: 
+---------
+
+(a) Prove that for all integer lists l, bump1 l == bump2 l.
+
+Proof: 
+
+
+
+
+
+
+
+(b) Prove that for all integer lists l, bump1 l == bump3 l.
+
+Proof:
+
+
+
+
+
+
+
+
+(c) In one sentence, what's the big difference between parts (a) and (b)?
+
+
+
+
+
+Part 2.5:
+---------
+
+Either prove or disprove each of the following. You will do any proofs using
+induction on lists and you will disprove any false statement by providing a
+counter-example to the claim.  When you do a proof, be sure to use the 
+standard template for list proofs.
+
+(a) For all l : ('a * 'b) list, zip(unzip l) == l.
+
+
+
+
+
+
+
+(b) For all l1 : 'a list, l2 : 'b list, unzip(zip (l1,l2)) == (l1,l2).
