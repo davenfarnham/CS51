@@ -223,3 +223,123 @@ let _ =
     play [Up; Down; Up; Down; Up; Up; Down; Down; Left; Right; Left; Right; B; A; Left; Right; Left; Up]	(* Punch; Konami; Kick *)
 
 
+type 'a rle = | One of 'a | Many of int * 'a
+
+(* 11 *)
+let rec encode' l = 
+  match l with
+  | [] -> []
+  | hd :: [] -> [One hd]
+  | hd :: tl -> (match encode' tl with
+		 | [] -> []
+ 		 | (One a) :: tl' -> if hd = a then (Many (2, a)) :: tl' else (One hd) :: (One a) :: tl'
+		 | (Many (i, a)) :: tl' -> if hd = a then (Many (i + 1, a)) :: tl' else (One hd) :: (Many (i, a)) :: tl')
+
+assert(encode' ["a";"a";"a";"a";"b";"c";"c";"a";"a";"d";"e";"e";"e";"e"] = 
+	       [Many (4, "a"); One "b"; Many (2, "c"); Many (2, "a"); One "d"; Many (4, "e")])
+
+
+(* 12 *)
+let rec decode l = 
+  match l with
+  | [] -> []
+  | hd :: tl -> (match hd with
+		 | One a -> a :: (decode tl)
+		 | Many (i, a) -> if i = 2 then a :: decode ((One a) :: tl) 
+				  else (a :: decode ((Many (i - 1, a)) :: tl)))		  
+
+assert(decode [Many (4,"a"); One "b"; Many (2,"c"); Many (2,"a"); One "d"; Many (4,"e")] = 
+	      ["a"; "a"; "a"; "a"; "b"; "c"; "c"; "a"; "a"; "d"; "e"; "e"; "e"; "e"])
+
+
+(* 13 - already do this in 11 *)
+
+let rec map f l = 
+  match l with
+  | [] -> []
+  | hd :: tl -> (f hd) :: (map f tl)
+
+let rec fold_left f l i =
+  match l with
+  | [] -> i
+  | hd :: tl -> f hd (fold_left f tl i) 
+
+(* 14 *)
+let duplicate l =
+  fold_left (fun x y -> x :: x :: y) l []
+
+assert(duplicate ["a";"b";"c";"c";"d"] = ["a"; "a"; "b"; "b"; "c"; "c"; "c"; "c"; "d"; "d"])
+
+
+(* 15 *)
+let replicate l n = 
+  let rec loop x n' = 
+    if n' = 0 then [] else x :: (loop x (n' - 1)) in
+  fold_left (fun x y -> (loop x n) @ y) l []
+
+assert(replicate ["a";"b";"c"] 3 = ["a"; "a"; "a"; "b"; "b"; "b"; "c"; "c"; "c"])
+
+
+(* 16 *)
+let drop l n = 
+  let rec loop l' n' =   
+    match l' with
+    | [] -> []
+    | hd :: tl -> if n' = n then loop tl 1 else hd :: (loop tl (n' + 1)) in
+  loop l 1
+
+assert(drop ["a";"b";"c";"d";"e";"f";"g";"h";"i";"j"] 3 = ["a"; "b"; "d"; "e"; "g"; "h"; "j"])
+
+
+(* 17 *)
+let split l n =
+  let rec loop l' n' = 
+    match l' with
+    | [] -> ([], [])
+    | hd :: tl -> if n' = n then ([hd], tl) else (match (loop tl (n' + 1)) with
+						  | (l, r) -> (hd :: l, r)) in
+  loop l 1
+
+assert(split ["a";"b";"c";"d";"e";"f";"g";"h";"i";"j"] 3 = (["a"; "b"; "c"], ["d"; "e"; "f"; "g"; "h"; "i"; "j"]))
+assert(split ["a";"b";"c";"d"] 5 = (["a"; "b"; "c"; "d"], []))
+
+
+(* 18 *)
+let slice l i i' = 
+  let rec loop l' left right = 
+    match l' with
+    | [] -> []
+    | hd :: tl -> if ((left = i) || (left > i)) && ((right = i') || (right < i')) then hd :: (loop tl (left + 1) (right + 1))
+		  else (loop tl (left + 1) (right + 1)) in
+  loop l 0 0 
+
+assert(slice ["a";"b";"c";"d";"e";"f";"g";"h";"i";"j"] 2 6 = ["c"; "d"; "e"; "f"; "g"])
+
+
+(* 19 *)
+let rec rotate l n = 
+  if n = 0 then l else (match l with
+			| [] -> []
+			| hd :: tl -> if n > 0 then rotate (tl @ [hd]) (n - 1) else (rotate l ((List.length l) + n)))
+
+assert(rotate ["a"; "b"; "c"; "d"; "e"; "f"; "g"; "h"] 3 = ["d"; "e"; "f"; "g"; "h"; "a"; "b"; "c"])
+assert(rotate ["a"; "b"; "c"; "d"; "e"; "f"; "g"; "h"] (-2) =["g"; "h"; "a"; "b"; "c"; "d"; "e"; "f"])
+
+
+let head l = 
+  match l with
+  | [] -> raise Error
+  | hd :: _ -> hd
+
+let tail l = 
+  match l with
+  | [] -> []
+  | _ :: tl -> tl
+
+(* 20 *)
+let remove_at n l = 
+ let rec loop n' l' = 
+   if n = n' then (tail l') else ((head l') :: (loop (n' + 1) (tail l'))) in
+  loop 0 l
+
+assert(remove_at 1 ["a";"b";"c";"d"] = ["a"; "c"; "d"])
