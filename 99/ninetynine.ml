@@ -343,3 +343,47 @@ let remove_at n l =
   loop 0 l
 
 assert(remove_at 1 ["a";"b";"c";"d"] = ["a"; "c"; "d"])
+
+
+(* 21 *)
+let rec insert_at s p l = 
+  match l with
+  | [] -> [s]
+  | hd :: tl -> if p = 0 then s :: l else hd :: (insert_at s (p - 1) tl)
+
+assert(insert_at "alfa" 1 ["a";"b";"c";"d"] = ["a"; "alfa"; "b"; "c"; "d"])
+assert(insert_at "alfa" 3 ["a";"b";"c";"d"] = ["a"; "b"; "c"; "alfa"; "d"])
+assert(insert_at "alfa" 4 ["a";"b";"c";"d"] = ["a"; "b"; "c"; "d"; "alfa"])
+
+
+(* 22 *)
+let rec range b t = 
+  if b < t then (if b = t then [b] else (b :: range (b + 1) t))
+  else (if b = t then [b] else (b :: range (b - 1) t))
+
+assert(range 4 9 = [4; 5; 6; 7; 8; 9])
+assert(range 9 4 = [9; 8; 7; 6; 5; 4])
+
+
+(* 23 - solution online reverses list for some reason *)
+open Random 
+let rec rand_select l n =
+  if n = 0 then [] else let pos = Random.int (List.length l) in 
+    			  let r = slice l pos pos in
+      			    (rand_select (List.rev (slice l 0 (pos - 1)) @ (slice l (pos + 1) ((List.length l) - 1))) (n - 1)) @ r
+
+assert(rand_select ["a";"b";"c";"d";"e";"f";"g";"h"] 3 = ["g"; "d"; "a"])
+
+
+(* 24 *)
+let lotto_select n m = 
+  rand_select (range 1 m) n
+
+assert(lotto_select 6 49 = [10; 20; 44; 22; 41; 2])
+
+
+(* 25 *)
+let permutation l = 
+  rand_select l (List.length l)
+
+assert(permutation ["a"; "b"; "c"; "d"; "e"; "f"] = ["a"; "e"; "f"; "b"; "d"; "c"])
