@@ -387,3 +387,26 @@ let permutation l =
   rand_select l (List.length l)
 
 assert(permutation ["a"; "b"; "c"; "d"; "e"; "f"] = ["a"; "e"; "f"; "b"; "d"; "c"])
+
+
+(* 26 *)
+let extract n l = 
+  let rec inner hd tl = 
+    match tl with
+    | [] -> []
+    | _ :: tl' -> if (List.length tl' < (n - 1)) then [(hd :: slice tl 0 (n - 2))] else ((inner hd tl') @ [(hd :: slice tl 0 (n - 2))]) in
+  let rec outer l'' =
+    let dis = (List.length l'') - n in
+      if dis < 0 then [] else ((outer (tail l'')) @ (inner (head l'') (tail l''))) in
+  outer l
+
+assert(extract 2 ["a";"b";"c";"d"] = [["c"; "d"]; ["b"; "d"]; ["b"; "c"]; ["a"; "d"]; ["a"; "c"]; ["a"; "b"]])
+assert(extract 3 ["a";"b";"c";"d"] = [["b";"c";"d"];["a";"c";"d"];["a";"b";"c"]])
+assert(extract 3 ["a";"b"] = [])
+
+
+(* 27 - without using previous functions *)
+let group lst p = 
+  match p with
+  | [l;r] -> 
+  | _ -> raise Error
