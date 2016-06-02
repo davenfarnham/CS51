@@ -274,13 +274,12 @@ end
 (* BTDict: a functor that implements our DICT signature           *)
 (* using a balanced tree (2-3 trees)                              *)
 (******************************************************************)
-(*
 module BTDict(D:DICT_ARG) : (DICT with type key = D.key
 with type value = D.value) =
 struct
   open Order
 
-  exception TODO
+  exception Error
 
   type key = D.key
   type value = D.value
@@ -353,13 +352,13 @@ struct
   (* TODO:
    * Implement fold. Read the specification in the DICT signature above. *)
   let rec fold (f: key -> value -> 'a -> 'a) (u: 'a) (d: dict) : 'a =
-    raise TODO
+    failwith "TODO"
 
   (* TODO:
    * Implement these to-string functions *)
-  let string_of_key = raise TODO
-  let string_of_value = raise TODO
-  let string_of_dict (d: dict) : string = raise TODO
+  let string_of_key = D.string_of_key
+  let string_of_value = D.string_of_value
+  let string_of_dict (d: dict) : string = failwith "TODO"
       
   (* Debugging function. This will print out the tree in text format.
    * Use this function to see the actual structure of your 2-3 tree. *
@@ -393,7 +392,7 @@ struct
    * result of performing the upward phase on w. *)
   let insert_upward_two (w: pair) (w_left: dict) (w_right: dict) 
       (x: pair) (x_other: dict) : kicked = 
-    raise TODO
+    failwith "TODO"
 
   (* Upward phase for w where its parent is a Three node whose (key,value) is x.
    * One of x's children is w, and of the two remaining children, 
@@ -409,7 +408,7 @@ struct
    * new tree as a result of performing the upward phase on w. *)
   let insert_upward_three (w: pair) (w_left: dict) (w_right: dict)
       (x: pair) (y: pair) (other_left: dict) (other_right: dict) : kicked =
-    raise TODO
+    failwith "TODO"
 
   (* Downward phase for inserting (k,v) into our dictionary d. 
    * The downward phase returns a "kicked" up configuration, where
@@ -445,23 +444,23 @@ struct
    * with the appropriate arguments. *)
   let rec insert_downward (d: dict) (k: key) (v: value) : kicked =
     match d with
-      | Leaf -> raise TODO (* base case! see handout *)
-      | Two(left,n,right) -> raise TODO (* mutual recursion *)
-      | Three(left,n1,middle,n2,right) -> raise TODO (* mutual recursion *)
+      | Leaf -> failwith "TODO" (* base case! see handout *)
+      | Two(left,n,right) -> failwith "TODO" (* mutual recursion *)
+      | Three(left,n1,middle,n2,right) -> failwith "TODO" (* mutual recursion *)
 
   (* Downward phase on a Two node. (k,v) is the (key,value) we are inserting,
    * (k1,v1) is the (key,value) of the current Two node, and left and right
    * are the two subtrees of the current Two node. *)
   and insert_downward_two ((k,v): pair) ((k1,v1): pair) 
       (left: dict) (right: dict) : kicked = 
-    raise TODO
+    failwith "TODO"
 
   (* Downward phase on a Three node. (k,v) is the (key,value) we are inserting,
    * (k1,v1) and (k2,v2) are the two (key,value) pairs in our Three node, and
    * left, middle, and right are the three subtrees of our current Three node *)
   and insert_downward_three ((k,v): pair) ((k1,v1): pair) ((k2,v2): pair) 
       (left: dict) (middle: dict) (right: dict) : kicked =
-    raise TODO
+    failwith "TODO"
 
   (* We insert (k,v) into our dict using insert_downward, which gives us
    * "kicked" up configuration. We return the tree contained in the "kicked"
@@ -480,9 +479,9 @@ struct
       (left: dict) (right: dict) (dir: direction2) : hole =
     match dir,n,left,right with
       | Left2,x,l,Two(m,y,r) -> Hole(rem,Three(l,x,m,y,r))
-      | Right2,y,Two(l,x,m),r -> raise TODO
-      | Left2,x,a,Three(b,y,c,z,d) -> raise TODO
-      | Right2,z,Three(a,x,b,y,c),d -> raise TODO
+      | Right2,y,Two(l,x,m),r -> failwith "TODO"
+      | Left2,x,a,Three(b,y,c,z,d) -> failwith "TODO"
+      | Right2,z,Three(a,x,b,y,c),d -> failwith "TODO"
       | Left2,_,_,_ | Right2,_,_,_ -> Absorbed(rem,Two(Leaf,n,Leaf))
 
   (* Upward phase for removal where the parent of the hole is a Three node.
@@ -494,13 +493,13 @@ struct
       (left: dict) (middle: dict) (right: dict) (dir: direction3) : hole =
     match dir,n1,n2,left,middle,right with
       | Left3,x,z,a,Two(b,y,c),d -> Absorbed(rem,Two(Three(a,x,b,y,c),z,d))
-      | Mid3,y,z,Two(a,x,b),c,d -> raise TODO
-      | Mid3,x,y,a,b,Two(c,z,d) -> raise TODO
-      | Right3,x,z,a,Two(b,y,c),d -> raise TODO
-      | Left3,w,z,a,Three(b,x,c,y,d),e -> raise TODO
-      | Mid3,y,z,Three(a,w,b,x,c),d,e -> raise TODO
-      | Mid3,w,x,a,b,Three(c,y,d,z,e) -> raise TODO
-      | Right3,w,z,a,Three(b,x,c,y,d),e -> raise TODO
+      | Mid3,y,z,Two(a,x,b),c,d -> failwith "TODO"
+      | Mid3,x,y,a,b,Two(c,z,d) -> failwith "TODO"
+      | Right3,x,z,a,Two(b,y,c),d -> failwith "TODO"
+      | Left3,w,z,a,Three(b,x,c,y,d),e -> failwith "TODO"
+      | Mid3,y,z,Three(a,w,b,x,c),d,e -> failwith "TODO"
+      | Mid3,w,x,a,b,Three(c,y,d,z,e) -> failwith "TODO"
+      | Right3,w,z,a,Three(b,x,c,y,d),e -> failwith "TODO"
       | Left3,_,_,_,_,_ | Mid3,_,_,_,_,_ | Right3,_,_,_,_,_ ->
         Absorbed(rem,Three(Leaf,n1,Leaf,n2,Leaf))
 
@@ -617,12 +616,12 @@ struct
    * in our dictionary and returns it as an option, or return None
    * if the key is not in our dictionary. *)
   let rec lookup (d: dict) (k: key) : value option =
-    raise TODO
+    failwith "TODO"
 
   (* TODO:
    * Write a function to test if a given key is in our dictionary *)
   let member (d: dict) (k: key) : bool =
-    raise TODO
+    failwith "TODO"
 
   (* TODO:
    * Write a function that removes any (key,value) pair from our 
@@ -630,7 +629,7 @@ struct
    * as an option this (key,value) pair along with the new dictionary. 
    * If our dictionary is empty, this should return None. *)
   let choose (d: dict) : (key * value * dict) option =
-    raise TODO
+    failwith "TODO"
 
   (* TODO:
    * Write a function that when given a 2-3 tree (represented by our
@@ -640,11 +639,20 @@ struct
 
   (* How are you testing that you tree is balanced? 
    * ANSWER: 
-   *    _______________
+   *    Count height of each subtree then compare heights. Should run O(n).
    *)
   let rec balanced (d: dict) : bool =
-    raise TODO
-
+    let rec loop d' count : (int * bool) = 
+      match d' with
+      | Leaf -> (count, true) 
+      | Two (l, (k, v), r) -> let (lh, bl) = loop l (count + 1) in
+				let (rh, br) = loop r (count + 1) in 
+				  if (lh = rh) && bl && br then (lh, true) else (lh - rh, false)   
+      | Three (l, (k1, v1), m, (k2, v2), r) -> let (lh, bl) = loop l (count + 1) in
+				   		 let (mh, bm) = loop m (count + 1) in
+                                		   let (rh, br) = loop r (count + 1) in
+						     if (lh = rh) && (lh = mh) && bl && bm && br then (lh, true) else (lh - mh - rh, false) in
+    let (_, bal) = loop d 0 in bal
 
   (********************************************************************)
   (*       TESTS                                                      *)
@@ -676,7 +684,6 @@ struct
     else 
       (D.gen_key_random(), D.gen_value()) :: (generate_random_list (size - 1))
 
-(*
   let test_balance () =
     let d1 = Leaf in
     assert(balanced d1) ;
@@ -716,7 +723,7 @@ struct
                    D.gen_pair(),Leaf,D.gen_pair(),Two(Leaf,D.gen_pair(),Leaf))
     in
     assert(not (balanced d7)) ;
-    () *)
+    () 
 
 (*
   let test_remove_nothing () =
@@ -774,7 +781,7 @@ struct
     () *)
 
   let run_tests () = 
-(*    test_balance() ; *)
+    test_balance() ; 
 (*    test_remove_nothing() ;
     test_remove_from_nothing() ;
     test_remove_in_order() ;
@@ -783,7 +790,6 @@ struct
     ()
 
 end
-*)
 
 
 
@@ -801,10 +807,8 @@ IntStringListDict.run_tests();;
  * 
  * Uncomment out the lines below when you are ready to test your
  * 2-3 tree implementation. *)
-(*
 module IntStringBTDict = BTDict(IntStringDictArg) ;;
 IntStringBTDict.run_tests();;
-*)
 
 
 
