@@ -8,4 +8,4 @@ moogle: $(FILES)
 	ocamlc -g -o moogle unix.cma str.cma $(FILES)
 
 clean:
-	rm -f _build *.native moogle *.cmi *.cmo
+	rm -rf _build *.native moogle *.cmi *.cmo

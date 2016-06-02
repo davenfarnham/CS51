@@ -349,10 +349,14 @@ struct
   (* How do we represent an empty dictionary with 2-3 trees? *)
   let empty : dict = Leaf
 
+  (* I think this means left && depth first; so smallest key -> largest *)
   (* TODO:
    * Implement fold. Read the specification in the DICT signature above. *)
   let rec fold (f: key -> value -> 'a -> 'a) (u: 'a) (d: dict) : 'a =
-    failwith "TODO"
+    match d with
+    | Leaf -> u
+    | Two (l, (k, v), r) -> (fold f (f k v (fold f u r)) l)
+    | Three (l, (k1, v1), m, (k2, v2), r) -> (fold f (f k1 v1 (fold f (f k2 v2 (fold f u r)) m)) l)
 
   (* TODO:
    * Implement these to-string functions *)
@@ -725,6 +729,30 @@ struct
     assert(not (balanced d7)) ;
     () 
 
+    let test_fold () =
+      let a = D.gen_key () in
+	let b = D.gen_key_gt a () in
+	  let c = D.gen_key_gt b () in
+	    let d = D.gen_key_gt c () in
+	      let e = D.gen_key_gt d () in
+	        let f = D.gen_key_gt e () in
+	          let g = D.gen_key_gt f () in
+ 
+      let one = (a, D.gen_value ()) in
+	let two = (b, D.gen_value ()) in
+	  let three = (c, D.gen_value ()) in
+	    let four = (d, D.gen_value ()) in
+	      let five = (e, D.gen_value ()) in
+	        let six = (f, D.gen_value ()) in
+	          let seven = (g, D.gen_value ()) in
+      let d = Two(Two(Two(Leaf, one, Leaf), two, Two(Leaf, three, Leaf)), four, Two(Two(Leaf, five, Leaf), six, Two(Leaf, seven, Leaf))) in
+        let rec order l = 
+          match l with
+          | [] -> true 
+	  | hd :: [] -> true
+          | hd :: tl :: rest -> if hd < tl then true && order (tl :: rest) else false in
+	assert(order (fold (fun k v a -> k :: a) [] d))
+
 (*
   let test_remove_nothing () =
     let pairs1 = generate_pair_list 26 in
@@ -782,6 +810,7 @@ struct
 
   let run_tests () = 
     test_balance() ; 
+    test_fold () ;
 (*    test_remove_nothing() ;
     test_remove_from_nothing() ;
     test_remove_in_order() ;
