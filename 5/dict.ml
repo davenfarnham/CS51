@@ -362,7 +362,7 @@ struct
    * Implement these to-string functions *)
   let string_of_key = D.string_of_key
   let string_of_value = D.string_of_value
-  let string_of_dict (d: dict) : string = failwith "TODO"
+  let string_of_dict (d: dict) : string = fold (fun k v a -> "Key: " ^ (string_of_key k) ^ "Value: " ^ (string_of_value v) ^ "\n" ^ a) "" d
       
   (* Debugging function. This will print out the tree in text format.
    * Use this function to see the actual structure of your 2-3 tree. *
@@ -620,12 +620,20 @@ struct
    * in our dictionary and returns it as an option, or return None
    * if the key is not in our dictionary. *)
   let rec lookup (d: dict) (k: key) : value option =
-    failwith "TODO"
+    match d with
+    | Leaf -> None
+    | Two (l, (k1, v1), r) -> if k1 = k then Some v1 else (if k < k1 then lookup l k else lookup r k)    
+    | Three(l, (k1, v1), m, (k2, v2), r) -> if k = k1 then Some v1 else 
+					      (if k = k2 then Some v2 else 
+					        (if k < k1 then lookup l k else 
+						  (if k > k1 && k < k2 then lookup m k else lookup r k)))
 
   (* TODO:
    * Write a function to test if a given key is in our dictionary *)
   let member (d: dict) (k: key) : bool =
-    failwith "TODO"
+    match lookup d k with
+    | None -> false
+    | Some _ -> true    
 
   (* TODO:
    * Write a function that removes any (key,value) pair from our 
@@ -649,10 +657,10 @@ struct
     let rec loop d' count : (int * bool) = 
       match d' with
       | Leaf -> (count, true) 
-      | Two (l, (k, v), r) -> let (lh, bl) = loop l (count + 1) in
+      | Two (l, (_, _), r) -> let (lh, bl) = loop l (count + 1) in
 				let (rh, br) = loop r (count + 1) in 
 				  if (lh = rh) && bl && br then (lh, true) else (lh - rh, false)   
-      | Three (l, (k1, v1), m, (k2, v2), r) -> let (lh, bl) = loop l (count + 1) in
+      | Three (l, (_, _), m, (_, _), r) -> let (lh, bl) = loop l (count + 1) in
 				   		 let (mh, bm) = loop m (count + 1) in
                                 		   let (rh, br) = loop r (count + 1) in
 						     if (lh = rh) && (lh = mh) && bl && bm && br then (lh, true) else (lh - mh - rh, false) in
@@ -729,15 +737,14 @@ struct
     assert(not (balanced d7)) ;
     () 
 
-    let test_fold () =
+    let test_fold_lookup () =
       let a = D.gen_key () in
 	let b = D.gen_key_gt a () in
 	  let c = D.gen_key_gt b () in
 	    let d = D.gen_key_gt c () in
 	      let e = D.gen_key_gt d () in
 	        let f = D.gen_key_gt e () in
-	          let g = D.gen_key_gt f () in
- 
+	          let g = D.gen_key_gt f () in 
       let one = (a, D.gen_value ()) in
 	let two = (b, D.gen_value ()) in
 	  let three = (c, D.gen_value ()) in
@@ -751,7 +758,17 @@ struct
           | [] -> true 
 	  | hd :: [] -> true
           | hd :: tl :: rest -> if hd < tl then true && order (tl :: rest) else false in
-	assert(order (fold (fun k v a -> k :: a) [] d))
+	assert(order (fold (fun k v a -> k :: a) [] d));
+        let deoption o = 
+          match o with
+	  | None -> false
+	  | Some _ -> true in
+	assert(deoption (lookup d e));
+	assert(deoption (lookup d f));
+	let h = D.gen_key_gt g () in       
+	  assert(not (deoption (lookup d h)))
+
+
 
 (*
   let test_remove_nothing () =
@@ -810,7 +827,7 @@ struct
 
   let run_tests () = 
     test_balance() ; 
-    test_fold () ;
+    test_fold_lookup () ;
 (*    test_remove_nothing() ;
     test_remove_from_nothing() ;
     test_remove_in_order() ;
