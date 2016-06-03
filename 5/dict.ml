@@ -499,7 +499,7 @@ struct
     | true, true -> insert_downward left k v
     | false, true -> insert_downward middle k v
     | false, false -> insert_downward right k v
-    | _, _ -> raise Error (* deal with equivalence? *)
+    | _, _ -> raise Error
 
   (* We insert (k,v) into our dict using insert_downward, which gives us
    * "kicked" up configuration. We return the tree contained in the "kicked"
@@ -518,9 +518,9 @@ struct
       (left: dict) (right: dict) (dir: direction2) : hole =
     match dir,n,left,right with
       | Left2,x,l,Two(m,y,r) -> Hole(rem,Three(l,x,m,y,r))
-      | Right2,y,Two(l,x,m),r -> failwith "TODO"
-      | Left2,x,a,Three(b,y,c,z,d) -> failwith "TODO"
-      | Right2,z,Three(a,x,b,y,c),d -> failwith "TODO"
+      | Right2,y,Two(l,x,m),r -> Hole(rem,Three(l,x,m,y,r))
+      | Left2,x,a,Three(b,y,c,z,d) -> Absorbed(rem, Two(Two(a, x, b), y, Two(c, z, d)))
+      | Right2,z,Three(a,x,b,y,c),d -> Absorbed(rem, Two(Two(a, x, b), y, Two(c, z, d)))
       | Left2,_,_,_ | Right2,_,_,_ -> Absorbed(rem,Two(Leaf,n,Leaf))
 
   (* Upward phase for removal where the parent of the hole is a Three node.
@@ -532,13 +532,13 @@ struct
       (left: dict) (middle: dict) (right: dict) (dir: direction3) : hole =
     match dir,n1,n2,left,middle,right with
       | Left3,x,z,a,Two(b,y,c),d -> Absorbed(rem,Two(Three(a,x,b,y,c),z,d))
-      | Mid3,y,z,Two(a,x,b),c,d -> failwith "TODO"
-      | Mid3,x,y,a,b,Two(c,z,d) -> failwith "TODO"
-      | Right3,x,z,a,Two(b,y,c),d -> failwith "TODO"
-      | Left3,w,z,a,Three(b,x,c,y,d),e -> failwith "TODO"
-      | Mid3,y,z,Three(a,w,b,x,c),d,e -> failwith "TODO"
-      | Mid3,w,x,a,b,Three(c,y,d,z,e) -> failwith "TODO"
-      | Right3,w,z,a,Three(b,x,c,y,d),e -> failwith "TODO"
+      | Mid3,y,z,Two(a,x,b),c,d -> Absorbed(rem,Two(Three(a,x,b,y,c),z,d))
+      | Mid3,x,y,a,b,Two(c,z,d) -> Absorbed(rem,Two(a,x,Three(b,y,c,z,d)))
+      | Right3,x,z,a,Two(b,y,c),d -> Absorbed(rem,Two(a,x,Three(b,y,c,z,d)))
+      | Left3,w,z,a,Three(b,x,c,y,d),e -> Absorbed(rem,Three(Two(a,w,b),x,Two(c,y,d),z,e)) 
+      | Mid3,y,z,Three(a,w,b,x,c),d,e -> Absorbed(rem,Three(Two(a,w,b),x,Two(c,y,d),z,e))
+      | Mid3,w,x,a,b,Three(c,y,d,z,e) -> Absorbed(rem,Three(a,x,Two(b,x,c),y,Two(d,z,e)))
+      | Right3,w,z,a,Three(b,x,c,y,d),e -> Absorbed(rem,Three(a,x,Two(b,x,c),y,Two(d,z,e)))
       | Left3,_,_,_,_,_ | Mid3,_,_,_,_,_ | Right3,_,_,_,_,_ ->
         Absorbed(rem,Three(Leaf,n1,Leaf,n2,Leaf))
 
@@ -676,7 +676,18 @@ struct
    * as an option this (key,value) pair along with the new dictionary. 
    * If our dictionary is empty, this should return None. *)
   let choose (d: dict) : (key * value * dict) option =
-    failwith "TODO"
+    let rec find_min d' =
+      match d' with
+      | Leaf -> None
+      | Two(l, (k, v), r) -> (match find_min l with
+			      | None -> Some (k, v)
+			      | Some (k1, v1) as t -> t)
+      | Three(l, (k, v), m, (k1, v1), r) -> (match find_min l with
+					     | None -> Some (k, v)
+                              		     | Some (k1, v1) as t -> t) in
+    match find_min d with
+    | None -> None
+    | Some (min_key, min_value) -> Some (min_key, min_value, (remove d min_key))
 
   (* TODO:
    * Write a function that when given a 2-3 tree (represented by our
@@ -840,7 +851,13 @@ struct
 	    assert((balanced d4) && (gt_lt d4));
 	let g = D.gen_key () in 
 	  let d5 = insert d4 g (D.gen_value ()) in 
-	    assert((balanced d5) && (gt_lt d5))
+	    assert((balanced d5) && (gt_lt d5));
+	    let rec loop_check dict lst =
+	      match lst, (choose dict) with
+	      | [], _ -> ()
+	      | hd :: tl, None -> assert(false)
+	      | hd :: tl, Some (k, _, dict') -> assert(k = hd); loop_check dict' tl in
+	    loop_check d5 [f;e;a;b;c]
 
 (*
   let test_remove_nothing () =
@@ -890,6 +907,7 @@ struct
 
   let test_remove_random_order () =
     let pairs5 = generate_random_list 100 in
+    print_string (string_of_dict pairs5);
     let d5 = insert_list empty pairs5 in
     let r5 = List.fold_right (fun (k,_) d -> remove d k) pairs5 d5 in
     List.iter (fun (k,_) -> assert(not (member r5 k))) pairs5 ;
@@ -901,7 +919,7 @@ struct
     test_balance() ; 
     test_fold_lookup () ;
     test_insert () ;
-(*    test_remove_nothing() ;
+    (* test_remove_nothing() ;
     test_remove_from_nothing() ;
     test_remove_in_order() ;
     test_remove_reverse_order() ;
