@@ -423,7 +423,8 @@ struct
 	  | (true, true) -> Up ((Two (w_left, w, w_right)), x, (Two (other_left, y, other_right)))
 	  | (false, true) -> Up ((Two (other_left, x, w_left)), w, (Two (w_right, y, other_right)))
 	  | (false, false) -> Up ((Two (other_left, x, other_right)), y, (Two (w_left, w, w_right)))
-
+	  | (_, _) -> raise Error
+				 
   (* Downward phase for inserting (k,v) into our dictionary d. 
    * The downward phase returns a "kicked" up configuration, where
    * 
@@ -458,23 +459,44 @@ struct
    * with the appropriate arguments. *)
   let rec insert_downward (d: dict) (k: key) (v: value) : kicked =
     match d with
-      | Leaf -> failwith "TODO" (* base case! see handout *)
-      | Two(left,n,right) -> failwith "TODO" (* mutual recursion *)
-      | Three(left,n1,middle,n2,right) -> failwith "TODO" (* mutual recursion *)
+      | Leaf -> Up (Leaf, (k, v), Leaf)
+      | Two(left,n,right) -> let (k1, v1) = n in 
+			       (match (insert_downward_two (k, v) n left right) with
+			        | Up (l, w, r) -> if k < k1 then insert_upward_two w l r n right else insert_upward_two w l r n left 
+			        | Done d' -> if k < k1 then (Done (Two (d', n, right))) else (Done (Two (left, n, d')))) 
+      | Three(left,n1,middle,n2,right) -> let (k1, v1) = n1 in 
+					    let (k2, v2) = n2 in 
+					      (match (insert_downward_three (k, v) n1 n2 left middle right) with
+					       | Up (l, w, r) -> (match (k < k1, k < k2) with
+								  | true, true -> insert_upward_three w l r n1 n2 middle right
+								  | false, true -> insert_upward_three w l r n1 n2 left right
+								  | false, false -> insert_upward_three w l r n1 n2 left middle
+								  | _, _ -> raise Error) (* update for equality *)
+					       | Done d' -> (match (k < k1, k < k2) with
+                                                             | true, true -> (Done (Three (d', n1, middle, n2, right)))
+                                                             | false, true -> (Done (Three (left, n1, d', n2, right)))
+                                                             | false, false -> (Done (Three (left, n1, middle, n2, d')))
+                                                             | _, _ -> raise Error))
 
   (* Downward phase on a Two node. (k,v) is the (key,value) we are inserting,
    * (k1,v1) is the (key,value) of the current Two node, and left and right
    * are the two subtrees of the current Two node. *)
   and insert_downward_two ((k,v): pair) ((k1,v1): pair) 
       (left: dict) (right: dict) : kicked = 
-    failwith "TODO"
+    match (k < k1) with
+    | true -> insert_downward left k v
+    | false -> insert_downward right k v
 
   (* Downward phase on a Three node. (k,v) is the (key,value) we are inserting,
    * (k1,v1) and (k2,v2) are the two (key,value) pairs in our Three node, and
    * left, middle, and right are the three subtrees of our current Three node *)
   and insert_downward_three ((k,v): pair) ((k1,v1): pair) ((k2,v2): pair) 
       (left: dict) (middle: dict) (right: dict) : kicked =
-    failwith "TODO"
+    match (k < k1, k < k2) with
+    | true, true -> insert_downward left k v
+    | false, true -> insert_downward middle k v
+    | false, false -> insert_downward right k v
+    | _, _ -> raise Error (* deal with equivalence? *)
 
   (* We insert (k,v) into our dict using insert_downward, which gives us
    * "kicked" up configuration. We return the tree contained in the "kicked"
