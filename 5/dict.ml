@@ -461,22 +461,25 @@ struct
     match d with
       | Leaf -> Up (Leaf, (k, v), Leaf)
       | Two(left,n,right) -> let (k1, v1) = n in 
-			       (match (insert_downward_two (k, v) n left right) with
-			        | Up (l, w, r) -> if k < k1 then insert_upward_two w l r n right else insert_upward_two w l r n left 
-			        | Done d' -> if k < k1 then (Done (Two (d', n, right))) else (Done (Two (left, n, d')))) 
+			       if k1 = k then (Done (Two (left, (k, v), right))) (* replace if k1 = k *)
+			       else (match (insert_downward_two (k, v) n left right) with
+			             | Up (l, w, r) -> if k < k1 then insert_upward_two w l r n right else insert_upward_two w l r n left 
+			             | Done d' -> if k < k1 then (Done (Two (d', n, right))) else (Done (Two (left, n, d')))) 
       | Three(left,n1,middle,n2,right) -> let (k1, v1) = n1 in 
-					    let (k2, v2) = n2 in 
-					      (match (insert_downward_three (k, v) n1 n2 left middle right) with
-					       | Up (l, w, r) -> (match (k < k1, k < k2) with
-								  | true, true -> insert_upward_three w l r n1 n2 middle right
-								  | false, true -> insert_upward_three w l r n1 n2 left right
-								  | false, false -> insert_upward_three w l r n1 n2 left middle
-								  | _, _ -> raise Error) (* update for equality *)
-					       | Done d' -> (match (k < k1, k < k2) with
-                                                             | true, true -> (Done (Three (d', n1, middle, n2, right)))
-                                                             | false, true -> (Done (Three (left, n1, d', n2, right)))
-                                                             | false, false -> (Done (Three (left, n1, middle, n2, d')))
-                                                             | _, _ -> raise Error))
+					    let (k2, v2) = n2 in
+					      if k = k1 then (Done (Three (left, (k, v), middle, n2, right))) 
+					      else (if k = k2 then (Done (Three (left, n1, middle, (k, v), right)))
+					            else (match (insert_downward_three (k, v) n1 n2 left middle right) with
+					                  | Up (l, w, r) -> (match (k < k1, k < k2) with
+								             | true, true -> insert_upward_three w l r n1 n2 middle right
+								             | false, true -> insert_upward_three w l r n1 n2 left right
+								             | false, false -> insert_upward_three w l r n1 n2 left middle
+								             | _, _ -> raise Error)
+					                  | Done d' -> (match (k < k1, k < k2) with
+                                                                        | true, true -> (Done (Three (d', n1, middle, n2, right)))
+                                                                        | false, true -> (Done (Three (left, n1, d', n2, right)))
+                                                                        | false, false -> (Done (Three (left, n1, middle, n2, d')))
+                                                                        | _, _ -> raise Error)))
 
   (* Downward phase on a Two node. (k,v) is the (key,value) we are inserting,
    * (k1,v1) is the (key,value) of the current Two node, and left and right
@@ -834,8 +837,10 @@ struct
 	  let d2 = insert d1 c (D.gen_value ()) in
 	    let d3 = insert d2 e (D.gen_value ()) in
 	      let d4 = insert d3 f (D.gen_value ()) in
-	    print_string (string_of_dict d4);
-	    assert((balanced d4) && (gt_lt d4))
+	    assert((balanced d4) && (gt_lt d4));
+	let g = D.gen_key () in 
+	  let d5 = insert d4 g (D.gen_value ()) in 
+	    assert((balanced d5) && (gt_lt d5))
 
 (*
   let test_remove_nothing () =
