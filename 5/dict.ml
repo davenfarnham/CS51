@@ -369,7 +369,7 @@ struct
    *
    * e.g.      (4,d)   (6,f)
    *         /       |       \
-   *      (2,b)    (4,d)     Leaf
+   *      (2,b)    (5,e)     Leaf
    *      /  \     /   \
    *   Leaf  Leaf Leaf  Leaf
    *
@@ -398,7 +398,7 @@ struct
       (x: pair) (x_other: dict) : kicked = 
     let (k1, v1) = w in
       let (k2, v2) = x in
-	match (k1 < k2) with
+	match k1 < k2 with
 	| true -> Done (Three (w_left, w, w_right, x, x_other))
 	| false -> Done (Three (x_other, x, w_left, w, w_right))
 
@@ -698,6 +698,29 @@ struct
 						     if (lh = rh) && (lh = mh) && bl && bm && br then (lh, true) else (lh - mh - rh, false) in
     let (_, bal) = loop d 0 in bal
 
+  (* check that all nodes to the left of some node n are less than n, while all to 
+     the right are greater than n *) 
+  let get_node (d: dict) : (key * value) list = 
+    match d with
+    | Leaf -> []
+    | Two (l, n, r) -> [n]
+    | Three (l, n1, m, n2, r) -> [n1;n2]        
+
+  let gt_lt_helper (d: dict) (d': dict) (k: key) : bool = 
+    match get_node d, get_node d' with
+    | [], [] -> true
+    | [(k1, _)], [(k2, _)] -> if (k > k1 && k < k2) then true else false
+    | [(k1, _);(k1', _)], [(k2, _);(k2', _)] -> if (k > k1 && k > k1' && k < k2 && k < k2') then true else false
+    | [(k1, _)], [(k2, _);(k2', _)] -> if (k > k1 && k < k2 && k < k2') then true else false  
+    | [(k1, _);(k1', _)], [(k2, _)] -> if (k > k1 && k > k1' && k < k2) then true else false  
+    | _, _ -> raise Error
+
+  let rec gt_lt (d: dict) : bool = 
+    match d with
+    | Leaf -> true
+    | Two (l, (k, v), r) -> gt_lt_helper l r k
+    | Three (l, (k1, v1), m, (k2, v2), r) -> (gt_lt_helper l m k1) && (gt_lt_helper m r k2)
+
   (********************************************************************)
   (*       TESTS                                                      *)
   (* You must write more comprehensive tests, using our remove tests  *)
@@ -800,7 +823,19 @@ struct
 	let h = D.gen_key_gt g () in       
 	  assert(not (deoption (lookup d h)))
 
-
+    let test_insert () = 
+      let a = D.gen_key () in
+        let b = D.gen_key_gt a () in
+          let c = D.gen_key_gt b () in
+	    let e = D.gen_key_lt a () in
+	      let f = D.gen_key_lt e () in
+      let d = insert Leaf a (D.gen_value ()) in
+	let d1 = insert d b (D.gen_value ()) in
+	  let d2 = insert d1 c (D.gen_value ()) in
+	    let d3 = insert d2 e (D.gen_value ()) in
+	      let d4 = insert d3 f (D.gen_value ()) in
+	    print_string (string_of_dict d4);
+	    assert((balanced d4) && (gt_lt d4))
 
 (*
   let test_remove_nothing () =
@@ -860,6 +895,7 @@ struct
   let run_tests () = 
     test_balance() ; 
     test_fold_lookup () ;
+    test_insert () ;
 (*    test_remove_nothing() ;
     test_remove_from_nothing() ;
     test_remove_in_order() ;
