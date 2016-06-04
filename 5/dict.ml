@@ -837,7 +837,7 @@ struct
 	let h = D.gen_key_gt g () in       
 	  assert(not (deoption (lookup d h)))
 
-    let test_insert () = 
+    let test_insert_remove () = 
       let a = D.gen_key () in
         let b = D.gen_key_gt a () in
           let c = D.gen_key_gt b () in
@@ -849,7 +849,7 @@ struct
 	    let d3 = insert d2 e (D.gen_value ()) in
 	      let d4 = insert d3 f (D.gen_value ()) in
 	    assert((balanced d4) && (gt_lt d4));
-	let g = D.gen_key () in 
+	let g = D.gen_key_gt c () in 
 	  let d5 = insert d4 g (D.gen_value ()) in 
 	    assert((balanced d5) && (gt_lt d5));
 	    let rec loop_check dict lst =
@@ -857,7 +857,13 @@ struct
 	      | [], _ -> ()
 	      | hd :: tl, None -> assert(false)
 	      | hd :: tl, Some (k, _, dict') -> assert(k = hd); loop_check dict' tl in
-	    loop_check d5 [f;e;a;b;c]
+	    let rec remove_check dict dlst lst = 
+	      match lst, dlst with
+	      | [], [] -> ()
+	      | _ :: _, [] -> assert(false)
+	      | [], _ :: _ -> assert(false)
+	      | hd :: tl, hd' :: tl' -> assert(hd' = (remove dict hd)); remove_check hd' tl' tl in
+	    (remove_check d5 [d4;d3;d2;d1;d] [g;f;e;c;b]); loop_check d5 [f;e;a;b;c;g]
 
 (*
   let test_remove_nothing () =
@@ -918,7 +924,7 @@ struct
   let run_tests () = 
     test_balance() ; 
     test_fold_lookup () ;
-    test_insert () ;
+    test_insert_remove () ;
     (* test_remove_nothing() ;
     test_remove_from_nothing() ;
     test_remove_in_order() ;
@@ -957,6 +963,6 @@ module Make (D:DICT_ARG) : (DICT with type key = D.key
   with type value = D.value) = 
   (* Change this line to the BTDict implementation when you are
    * done implementing your 2-3 trees. *)
-  AssocListDict(D)
-  (* BTDict(D) *)
+  (* AssocListDict(D) *)
+  BTDict(D)
 

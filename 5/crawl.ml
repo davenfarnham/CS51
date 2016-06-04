@@ -74,7 +74,7 @@ let rec crawl (n:int) (frontier: LinkSet.set) (visited : LinkSet.set) (d:WordDic
 	      if LinkSet.member visited l then crawl n s visited d 
 	      else 
 	          match CrawlerServices.get_page l with
-	          | None -> raise NoPage
+	          | None -> crawl n s visited d (* continue along frontier if page doesn't exist *)
 	          | Some p -> let rec add_to_dict l d' = match l with
 					         	 | [] -> d' 
 					                 | hd :: tl -> match WordDict.lookup d' hd with
