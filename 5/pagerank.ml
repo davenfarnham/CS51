@@ -118,8 +118,6 @@ end
 (*****************************************************************)
 (* Random Walk Ranker                                            *)
 (*****************************************************************)
-(*
-
 module type WALK_PARAMS =
 sig
   (* Should we randomly jump somewhere else occasionally? 
@@ -137,9 +135,32 @@ struct
   module G = GA
   module NS = NSA
 
-  (* TODO - fill this in*)
+  exception Error
+
+  let rec index_into_list (index: int) (lst : 'a list) : 'a = 
+    match lst with
+    | [] -> raise Error
+    | hd :: tl -> if index = 0 then hd else (index_into_list (index - 1) tl)
+
+  let rec print_node_list lst =
+    match lst with
+    | [] -> ()
+    | hd :: tl -> print_string (GA.N.string_of_node hd); print_node_list tl
+
+  (* there might be a problem with nodes that have no neighbors such as index.html *)
+  let rank (g : G.graph) =
+    let nodes = (G.nodes g) in
+      let random_start = Random.int (List.length nodes) in 
+      let rec loop (count : int) (nsm : NS.node_score_map) node =
+        if count = 0 then nsm 
+	else let neighboring_list = (match G.neighbors g node with
+	       | None -> []
+	       | Some xs -> xs) in
+	  let nsm' = NS.add_score nsm node 0.1 in 
+	    let node' = index_into_list (Random.int (List.length neighboring_list)) neighboring_list in
+	      loop (count - 1) nsm' node' in
+        NS.normalize (loop P.num_steps (NS.zero_node_score_map nodes) (index_into_list random_start nodes))
 end
-*)
 
 (*****************************************************************)
 (* KARMA                                                         *)
