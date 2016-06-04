@@ -147,19 +147,27 @@ struct
     | [] -> ()
     | hd :: tl -> print_string (GA.N.string_of_node hd); print_node_list tl
 
-  (* there might be a problem with nodes that have no neighbors such as index.html *)
+  let prob (pr : float option) : bool = 
+    match pr with
+    | None -> false
+    | Some p -> let p' = Random.float 1.0 in 
+      		  if (p' >= p) then true else false
+
   let rank (g : G.graph) =
     let nodes = (G.nodes g) in
-      let random_start = Random.int (List.length nodes) in 
+      let random_start = Random.int (List.length nodes) in
       let rec loop (count : int) (nsm : NS.node_score_map) node =
-        if count = 0 then nsm 
-	else let neighboring_list = (match G.neighbors g node with
-	       | None -> []
-	       | Some xs -> xs) in
-	  let nsm' = NS.add_score nsm node 0.1 in 
-	    let node' = index_into_list (Random.int (List.length neighboring_list)) neighboring_list in
-	      loop (count - 1) nsm' node' in
-        NS.normalize (loop P.num_steps (NS.zero_node_score_map nodes) (index_into_list random_start nodes))
+        if (prob P.do_random_jumps) then loop count nsm (index_into_list (Random.int (List.length nodes)) nodes)
+	else (if count = 0 then nsm 
+	      else let neighboring_list = (match G.neighbors g node with
+	             | None -> []
+	             | Some xs -> xs) in
+	        let nsm' = NS.add_score nsm node 0.1 in 
+	          let length' = List.length neighboring_list in
+	            let node' = (if length' = 0 then (index_into_list (Random.int (List.length nodes)) nodes)
+			         else index_into_list (Random.int (List.length neighboring_list)) neighboring_list) in
+	              loop (count - 1) nsm' node') in
+      NS.normalize (loop P.num_steps (NS.zero_node_score_map nodes) (index_into_list random_start nodes))
 end
 
 (*****************************************************************)

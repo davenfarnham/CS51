@@ -7,14 +7,13 @@ exception NoPage
 
 (* RandomWalkRanker and QuantumRanker are for karma questions only *)
 module MoogleRanker
-    
+  (*    
      = InDegreeRanker (PageGraph) (PageScore)
-  (*
+  *)
      = RandomWalkRanker (PageGraph) (PageScore) (struct 
        let do_random_jumps = Some 0.20
        let num_steps = 1000
      end)
-  *)
   (*  
    = QuantumRanker (PageGraph) (PageScore) (struct 
        let alpha = 0.01
