@@ -175,7 +175,7 @@ end
 (* Quantum Ranker                                                *)
 (*****************************************************************)
 
-(*
+
 module type QUANTUM_PARAMS =
 sig
   (* What fraction of each node's score should be uniformly distributed
@@ -195,9 +195,34 @@ struct
   module G = GA
   module NS = NSA
 
-  (* TODO - fill this in *)
+  exception Error
+		
+  let rec update_list lst nsm v = 
+    match lst with
+    | [] -> nsm
+    | hd :: tl -> update_list tl (NS.add_score nsm hd v) v
+
+  let deop_score s =
+    match s with
+    | None -> raise Error
+    | Some f -> f 
+
+  let rank (g : G.graph) = 
+    let nodes = G.nodes g in 
+      let num_nodes = List.length nodes in 
+        let nsm = update_list nodes (NS.zero_node_score_map nodes) 1.0 in
+          let rec loop count nlst nsm = 
+      	    match nlst with
+	    | [] -> if count = 0 then nsm else (loop (count - 1) nodes nsm)
+	    | hd :: tl -> let neighboring_list = (match G.neighbors g hd with
+						| None -> []
+						| Some xs -> xs) in 
+  			    let nsm' = update_list neighboring_list nsm ((deop_score (NS.get_score nsm hd)) /. (float_of_int (List.length neighboring_list))) in
+			      let nsm'' = update_list nodes nsm' ((P.alpha *. (deop_score (NS.get_score nsm' hd))) /. (float_of_int num_nodes)) in
+	    loop count tl nsm'' in
+	NS.normalize(loop (P.num_steps - 1) nodes nsm)		
 end
-*)
+
 
 
 (*******************  TESTS BELOW  *******************)
@@ -264,7 +289,6 @@ struct
 end
 
 
-(*
 module TestQuantumRanker =
 struct 
   module G = NamedGraph
@@ -293,4 +317,4 @@ struct
 
 (* That's the problem with randomness -- hard to test *)
 end
-*)
+
