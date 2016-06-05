@@ -202,6 +202,11 @@ struct
     | [] -> nsm
     | hd :: tl -> update_list tl (NS.add_score nsm hd v) v
 
+  let rec all_but lst n = 
+    match lst with
+    | [] -> []
+    | hd :: tl -> if n = hd then (all_but tl n) else hd :: (all_but tl n)
+
   let deop_score s =
     match s with
     | None -> raise Error
@@ -218,7 +223,7 @@ struct
 						| None -> []
 						| Some xs -> xs) in 
   			    let nsm' = update_list neighboring_list nsm ((deop_score (NS.get_score nsm hd)) /. (float_of_int (List.length neighboring_list))) in
-			      let nsm'' = update_list nodes nsm' ((P.alpha *. (deop_score (NS.get_score nsm' hd))) /. (float_of_int num_nodes)) in
+			      let nsm'' = update_list (all_but nodes hd) nsm' ((P.alpha *. (deop_score (NS.get_score nsm' hd))) /. (float_of_int num_nodes)) in
 	    loop count tl nsm'' in
 	NS.normalize(loop (P.num_steps - 1) nodes nsm)		
 end

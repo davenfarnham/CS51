@@ -10,7 +10,7 @@ module MoogleRanker
   (*  
      = InDegreeRanker (PageGraph) (PageScore)
   *)
-  (*
+  (*    
      = RandomWalkRanker (PageGraph) (PageScore) (struct 
        let do_random_jumps = Some 0.20
        let num_steps = 1000
@@ -21,7 +21,6 @@ module MoogleRanker
        let num_steps = 1
        let debug = true
      end)
-  
 
 (* Dictionaries mapping words (strings) to sets of crawler links *)
 module WordDict = Dict.Make(
