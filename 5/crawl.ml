@@ -7,7 +7,7 @@ exception NoPage
 
 (* RandomWalkRanker and QuantumRanker are for karma questions only *)
 module MoogleRanker
-  (*    
+  (*  
      = InDegreeRanker (PageGraph) (PageScore)
   *)
      = RandomWalkRanker (PageGraph) (PageScore) (struct 

@@ -231,7 +231,7 @@ struct
 
 end
 
-(*
+
 module TestRandomWalkRanker =
 struct 
   module G = NamedGraph
@@ -262,7 +262,6 @@ struct
 
 (* That's the problem with randomness -- hard to test *)
 end
-*)
 
 
 (*
