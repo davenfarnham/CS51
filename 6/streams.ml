@@ -80,8 +80,20 @@ let _ =
 
 (*>* Problem 2.1.f *>*)
 let rec treenats () =
-  failwith "Unimplemented"
+  let rec loop t () =
+    let h = headt t in
+      Stem(h, loop (mapt (fun x -> x * 2) (ltail t)), loop (mapt (fun x -> x * 2 + 1) (rtail t))) in
+  loop onest
 ;;
+
+let _ = 
+  assert(headt (treenats ()) = 1);
+  assert(headt (ltail (ltail (treenats ()))) = 4); 
+  assert(headt (rtail (ltail (treenats ()))) = 5);
+  assert(headt (ltail (rtail (treenats ()))) = 6);
+  assert(headt (rtail (rtail (treenats ()))) = 7); 
+  assert(headt (ltail (ltail (ltail (treenats ())))) = 8)
+
 
 (***************** Using the Lazy module ******************)
 (* Here we provide an alternate implementation of streams using
