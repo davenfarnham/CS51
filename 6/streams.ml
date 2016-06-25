@@ -12,7 +12,8 @@ and 'a tr = Stem of 'a * 'a tree * 'a tree ;;
  * at the root of the tree *)
 
 let headt (t: 'a tree) : 'a =
-  failwith "Unimplemented"
+  match t () with
+  | Stem (a, _, _) -> a
 ;;
 
 (*>* Problem 2.1.b *>*)
@@ -20,11 +21,13 @@ let headt (t: 'a tree) : 'a =
  * left and right subtrees respectively *)
 
 let ltail (t: 'a tree) : 'a tree =
-  failwith "Unimplemented"
+  match t () with
+  | Stem (_, l, _) -> l
 ;;
 
 let rtail (t: 'a tree) : 'a tree =
-  failwith "Unimplemented"
+  match t () with
+  | Stem (_, _, r) -> r
 ;;
 
 (*>* Problem 2.1.c *>*)
@@ -32,7 +35,8 @@ let rtail (t: 'a tree) : 'a tree =
  * over the given treestream *)
 
 let rec mapt (f: 'a -> 'b) (t: 'a tree) : 'b tree =
-  failwith "Unimplemented"
+  match t () with
+  | Stem (a, l, r) -> fun () -> Stem (f a, mapt f l, mapt f r)
 ;;
 
 (*>* Problem 2.1.d *>*)
@@ -42,15 +46,23 @@ let rec mapt (f: 'a -> 'b) (t: 'a tree) : 'b tree =
  * the corresponding value in "zipt f t1 t2" should be "f x1 x2" *)
 
 let rec zipt (f: 'a -> 'b -> 'c) (t1: 'a tree) (t2: 'b tree) : 'c tree =
-  failwith "Unimplemented"
+  match (t1 (), t2 ()) with
+  | Stem (a, l, r), Stem(a', l', r') -> fun () -> Stem(f a a', zipt f l l', zipt f r r')
 ;;
 
 (* Define a treestream of all ones *)
 
 (*>* Problem 2.1.e *>*)
 let rec onest () =
-  failwith "Unimplemented"
+  Stem(1, onest, onest)
 ;;
+
+let _ = 
+  let twos = zipt (fun x y -> x + y) onest onest in
+  assert(headt twos = 2);
+  assert(headt (ltail twos) = 2); 
+  assert(headt (rtail twos) = 2)
+ 
 
 (* Define a treestream in which each positive natural number appears
  * exactly once, and where the first few rows are 1; 2 3; 4 5 6 7,
