@@ -1,0 +1,30 @@
+* If we have a  stream, which is, in effect, infinite, if we call a recursive function on this
+  stream then it's going to run forever. What we want to do, therefore, is slow down the eager
+  evaluation Ocaml wants to do and make it a bit lazy - so we want to slow evaluation such that 
+  expressions aren't fully evaluated. 
+  
+  Well, how do we do this?
+  
+  we wrap it in a lambda "fun () ->", which is a value. Ocaml thinks that it has to wait till it gets
+  an arguement before it can evaluate.  
+  
+
+* What about memoization? Basically, everytime I have to evaluate a stream it evaluates FROM THE BEGINNING,
+  which is terrible in terms of complexity.
+  
+  Memoization is basically just caching the previous answer so I don't have to keep re-evaluating it. 
+  
+  So, I think in lecture Greg used the example, if I'm calculating the 10th fib number, I'm going to 
+  have to calculate the 8th fib and 9th fib, from zero, and then use those to calculate the 10th fib.
+  But, I should already know what the 8th and 9th fib are from previous calculations.
+  
+  Use memoization to remember values. This is the new type definition:
+  
+  type 'a str = Cons of ('a * 'a stream)
+  and 'a stream = 'a str lazy_t;; 
+
+  I can then find the head like this:
+  
+  let rec head s = 
+  match Lazy.force s in
+  | Cons(h, _) -> h
