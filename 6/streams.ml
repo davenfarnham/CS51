@@ -115,29 +115,38 @@ let rec ones = Cons(1, lazy(ones));;
 (* Implement the head function *)
 
 let head (s:'a stream) : 'a =
-  failwith "Unimplemented"
+  match s with
+  | Cons(a, _) -> a
 ;;
 
 (*>* Problem 2.2.b *>*)
 (* Implement map *)
 
 let rec map (f:'a -> 'b) (s:'a stream) : 'b stream =
-  failwith "Unimplemented"
+  match s with
+  | Cons(a, s') -> Cons(f a, lazy(map f (Lazy.force s')))
 ;;
 
 (*>* Problem 2.2.c *>*)
 (* Define nats *)
 
-let rec nats = failwith "Unimplemented" ;;
+let rec nats = Cons(1, lazy(map (fun x -> x + 1) nats)) ;;
 
 (*>* Problem 2.2.d *>*)
 (* Write a function nth, which returns the nth element of a
  * stream. NOTE: the function nth should be zero-indexed. In other
  * words, "nth 0 s" should be equivalent to "head s". *)
-
 let rec nth (n:int) (s:'a stream) : 'a =
-  failwith "Unimplemented"
+  if n = 0 then head s else (match s with
+			     | Cons(a, s') -> nth (n - 1) (Lazy.force s'))
 ;;
+
+let _ = 
+  assert(nth 0 nats = 1);
+  assert(nth 1 nats = 2);
+  assert(nth 2 nats = 3);
+  assert(nth 3 nats = 4)
+
 
 (*>* Problem 2.2.e *>*)
 (* Now suppose we have two int streams s1 and s2 sorted in ascending
@@ -147,22 +156,41 @@ let rec nth (n:int) (s:'a stream) : 'a =
  * REMOVE DUPLICATES *)
 
 let merge (s1:int stream) (s2:int stream) : int stream =
-  failwith "Unimplemented"
+  let rec loop s1' s2' = 
+    match s1', s2' with
+    | Cons(a, s1''), Cons(b, s2'') -> (match a < b with
+				       | true -> Cons(a, lazy(loop (Lazy.force s1'') s2'))
+				       | false -> if a = b then Cons(a, lazy(loop (Lazy.force s1'') (Lazy.force s2'')))
+					          else Cons(b, lazy(loop s1' (Lazy.force s2'')))) in
+  loop s1 s2
 ;;
+
+let rec evens = Cons(2, lazy(map (fun x -> x + 2) evens))
+let rec odds = Cons(1, lazy(map (fun x -> x + 2) odds))
+
+let _ = 
+  assert(nth 0 (merge evens odds) = 1);
+  assert(nth 1 (merge evens odds) = 2);
+  assert(nth 2 (merge evens odds) = 3);
+  assert(nth 3 (merge evens odds) = 4);
+  assert(nth 0 (merge ones ones) = 1);
+  assert(nth 1 (merge ones ones) = 1);
+  assert(nth 2 (merge ones ones) = 1)
+
 
 (*>* Problem 2.2.f *>*)
 (* What problems can we run into with this conception of "merge"? What
  * if we were to run "merge ones ones"? Answer within the comment. *)
 
 (*
- *  Answer:
+ *  Answer: In my implementation, it doesn't actually merge, it just returns stream a, effectively
  *)
 
 (*>* Problem 2.2.g *>*)
 (* Write a function "scale", which takes an integer "n" and an int
  * stream "s", and multiplies each element of "s" by "n". *)
 
-let scale n = failwith "Unimplemented" ;;
+let scale n = map (fun x -> x * n) ;;
 
 (*>* Problem 2.2.h *>*)
 (* Suppose we wish to create a stream of the positive integers "n" in
@@ -186,10 +214,20 @@ let scale n = failwith "Unimplemented" ;;
    give a simple definition for "selectivestream". This can be done quite
    elegantly. *)
 
-let rec selectivestream = failwith "Unimplemented" ;;
+let rec selectivestream = Cons(1, lazy (merge (scale 3 selectivestream) (scale 5 selectivestream))) ;;
+
+let _ = 
+  assert(nth 0 selectivestream = 1);
+  assert(nth 1 selectivestream = 3);
+  assert(nth 2 selectivestream = 5);
+  assert(nth 3 selectivestream = 9);
+  assert(nth 4 selectivestream = 15);
+  assert(nth 5 selectivestream = 25);
+  assert(nth 6 selectivestream = 27)
+
 
 (*>* Problem 2.3 *>*)
 (* Please give us an honest estimate of how long this part took
  * you to complete.  We care about your responses and will use
  * them to help guide us in creating future assignments. *)
-let minutes_spent : int = -1
+let minutes_spent : int = 51
