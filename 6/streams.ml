@@ -79,7 +79,7 @@ let _ =
  *)
 
 (*>* Problem 2.1.f *>*)
-let rec treenats () =
+let treenats () =
   let rec loop t () =
     let h = headt t in
       Stem(h, loop (mapt (fun x -> x * 2) (ltail t)), loop (mapt (fun x -> x * 2 + 1) (rtail t))) in
@@ -138,7 +138,7 @@ let rec nats = Cons(1, lazy(map (fun x -> x + 1) nats)) ;;
  * words, "nth 0 s" should be equivalent to "head s". *)
 let rec nth (n:int) (s:'a stream) : 'a =
   if n = 0 then head s else (match s with
-			     | Cons(a, s') -> nth (n - 1) (Lazy.force s'))
+			     | Cons(_, s') -> nth (n - 1) (Lazy.force s'))
 ;;
 
 let _ = 

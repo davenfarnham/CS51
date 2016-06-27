@@ -249,4 +249,4 @@ let part4 = list_to_stream [Rest(0.25); Note((G,3),0.25,60);
 (* Please give us an honest estimate of how long this part took
  * you to complete.  We care about your responses and will use
  * them to help guide us in creating future assignments. *)
-let minutes_spent : int = -1
+let minutes_spent : int = 51
