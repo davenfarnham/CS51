@@ -126,7 +126,7 @@ let rec list_to_stream (lst : obj list) : event stream =
     match nlst with
     | [] -> (list_to_stream lst)
     | Note (p, f, i) :: tl -> (fun () -> Cons(Tone(0., p, i), fun () -> Cons(Stop(f, p), list_to_stream_rec tl))) 
-    | Rest f :: tl -> (fun () -> Cons(Tone(0., ((int_to_p 0), 0), 0), fun () -> Cons(Stop(f, ((int_to_p 0), 0)), list_to_stream_rec tl)))
+    | Rest f :: tl -> (fun () -> Cons(Tone(0., ((int_to_p 0), -1), 0), fun () -> Cons(Stop(f, ((int_to_p 0), 0)), list_to_stream_rec tl)))
   in list_to_stream_rec lst
 
 (* You might find this small helper function, well... helpful. *)
@@ -192,6 +192,20 @@ let scale2 = transpose scale1 7;;
 let scales = pair scale1 scale2;;
 
 output_midi "scale.mid" 32 scales;;
+
+let treble = list_to_stream [Note((C,4),0.125,60);Note((F,4),0.125,60);Note((F,4),0.125,60);Note((G,4),0.125,60);Note((G,4),0.125,60);
+			     Note((A,4),0.1875,60);Note((Bb,4),0.0625,60);Note((C,5),0.125,60);Note((C,5),0.0625,60);Note((A,4),0.0625,60);
+			     Note((G,4),0.125,60);Note((Bb,4),0.0625,60);Note((G,4),0.0625,60);Note((F,4),0.125,60);Note((E,4),0.125,60);
+		             Note((F,4),0.375,60)];;
+
+let bass = list_to_stream [Rest(0.125);Rest(0.125);Note((F,2),0.125,60);Note((E,2),0.125,60);Note((E,2),0.125,60);
+			   Note((F,2),0.1875,60);Note((G,2),0.0625,60);Note((A,2),0.125,60);Note((A,2),0.125,60);
+			   Note((Bb,2),0.125,60);Note((Bb,2),0.125,60);Note((C,3),0.125,60);Note((C,2),0.125,60);
+			   Note((F,2),0.125,60);Note((C,2),0.125,60);Note((F,1),0.125,60)];;
+
+let mozart = pair bass treble;;
+
+output_midi "mozart.mid" 64 mozart;;
 
 (*>* Problem 3.4 *>*)
 (* Then with just three lists ... *)
