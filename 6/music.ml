@@ -123,7 +123,10 @@ let shift_start (by : float) (str : event stream) =
  * since you will call both the inner and outer functions at some point. *)
 let rec list_to_stream (lst : obj list) : event stream =
   let rec list_to_stream_rec nlst =
-    failwith "Unimplemented"
+    match nlst with
+    | [] -> (list_to_stream lst)
+    | Note (p, f, i) :: tl -> (fun () -> Cons(Tone(0., p, i), fun () -> Cons(Stop(f, p), list_to_stream_rec tl))) 
+    | Rest f :: tl -> (fun () -> Cons(Tone(0., ((int_to_p 0), 0), 0), fun () -> Cons(Stop(f, ((int_to_p 0), 0)), list_to_stream_rec tl)))
   in list_to_stream_rec lst
 
 (* You might find this small helper function, well... helpful. *)
@@ -136,7 +139,22 @@ let time_of_event (e : event) : float =
 (* Write a function pair that merges two event streams. Events that happen
  * earlier in time should appear earlier in the merged stream. *)
 let rec pair (a : event stream) (b : event stream) : event stream =
-  failwith "Unimplemented"
+  match a (), b () with
+  | Cons(a', rest), Cons(b', rest') -> 
+      (match a', b' with
+       | Tone (f, p, i), Tone (f', p', i') -> if (f < f' || f = f') then (fun () -> Cons (Tone(f, p, i), (pair rest (fun () -> Cons (Tone(f' -. f, p', i'), rest')))))
+					      else (fun () -> Cons (Tone(f', p', i'), (pair (fun () -> Cons (Tone(f -. f', p, i), rest)) rest')))
+
+       | Tone (f, p, i), Stop (f', p') -> if (f < f' || f = f') then (fun () -> Cons (Tone(f, p, i), (pair rest (fun () -> Cons (Stop(f' -. f, p'), rest')))))
+					  else (fun () -> Cons (Stop(f', p'), (pair (fun () -> Cons (Tone(f -. f', p, i), rest)) rest')))
+
+
+       | Stop (f, p), Tone (f', p', i') -> if (f < f' || f = f') then (fun () -> Cons (Stop(f, p), (pair rest (fun () -> Cons (Tone(f' -. f, p', i'), rest')))))
+					   else (fun () -> Cons (Tone(f', p', i'), (pair (fun () -> Cons (Stop(f -. f', p), rest)) rest')))
+
+
+       | Stop (f, p), Stop (f', p') -> if (f < f' || f = f') then (fun () -> Cons (Stop(f, p), (pair rest (fun () -> Cons (Stop(f' -. f, p'), rest')))))
+				       else (fun () -> Cons (Stop(f', p'), (pair (fun () -> Cons (Stop(f -. f', p), rest)) rest'))))
 
 (*>* Problem 3.3 *>*)
 (* Write a function transpose that takes an event stream and moves each pitch
@@ -151,8 +169,11 @@ let transpose_pitch (p, oct) half_steps =
       else (int_to_p ((newp mod 12) + 12), oct - 1 + (newp / 12))
     else (int_to_p (newp mod 12), oct + (newp / 12))
 
-let transpose (str : event stream) (half_steps : int) : event stream =
-    failwith "Unimplemented"
+(* changed to recursive *)
+let rec transpose (str : event stream) (half_steps : int) : event stream =
+  match str () with
+  | Cons(Tone(f, p, i), rest) -> fun () -> Cons(Tone(f, transpose_pitch p half_steps, i), transpose rest half_steps)
+  | Cons(Stop(f, p), rest) -> fun () -> Cons(Stop(f, transpose_pitch p half_steps), transpose rest half_steps)
 
 (* Some functions for convenience. *)
 let quarter pt = Note(pt,0.25,60);;
@@ -163,7 +184,6 @@ let eighth pt = Note(pt,0.125,60);;
  * the functions above. *)
 (* Start off with some scales. We've done these for you.*)
 
-(*
 let scale1 = list_to_stream (List.map ~f:quarter [(C,3);(D,3);(E,3);(F,3);(G,3);
                                             (A,3);(B,3);(C,4)]);;
 
@@ -172,12 +192,10 @@ let scale2 = transpose scale1 7;;
 let scales = pair scale1 scale2;;
 
 output_midi "scale.mid" 32 scales;;
-*)
 
 (*>* Problem 3.4 *>*)
 (* Then with just three lists ... *)
 
-(*
 let bass = list_to_stream (List.map ~f:quarter [(D,3);(A,2);(B,2);(Gb,2);(G,2);
                                              (D,2);(G,2);(A,2)]);;
 
@@ -188,7 +206,6 @@ let fast = [(D,3);(Gb,3);(A,3);(G,3);(Gb,3);(D,3);(Gb,3);(E,3);(D,3);(B,2);
 
 let melody = list_to_stream ((List.map ~f:quarter slow) @
                 (List.map ~f:eighth fast));;
-*)
 
 (* ...and the functions we defined, produce (a small part of) a great piece of
  * music. The piece should be four streams merged: one should be the bass
@@ -199,9 +216,12 @@ let melody = list_to_stream ((List.map ~f:quarter slow) @
  * bass and melody. Uncomment the definitions above and the lines below when
  * you're done. Run the program to hear the beautiful music. *)
 
-(* let canon = failwith "Unimplemented";;
+let canon = let tw = shift_start 2. melody in
+	      let fr = shift_start 4. melody in 
+	        let sx = shift_start 6. melody in
+		 (pair (pair (pair bass tw) fr) sx);;
 
-output_midi "canon.mid" 176 canon;; *)
+output_midi "canon.mid" 176 canon;; 
 
 (* Some other musical parts for you to play with. *)
 
