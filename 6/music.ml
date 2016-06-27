@@ -126,7 +126,7 @@ let rec list_to_stream (lst : obj list) : event stream =
     match nlst with
     | [] -> (list_to_stream lst)
     | Note (p, f, i) :: tl -> (fun () -> Cons(Tone(0., p, i), fun () -> Cons(Stop(f, p), list_to_stream_rec tl))) 
-    | Rest f :: tl -> (fun () -> Cons(Tone(0., ((int_to_p 0), -1), 0), fun () -> Cons(Stop(f, ((int_to_p 0), 0)), list_to_stream_rec tl)))
+    | Rest f :: tl -> (fun () -> Cons(Tone(0., ((int_to_p 0), -1), 0), fun () -> Cons(Stop(f, ((int_to_p 0), -1)), list_to_stream_rec tl)))
   in list_to_stream_rec lst
 
 (* You might find this small helper function, well... helpful. *)
