@@ -227,7 +227,7 @@ let bass = list_to_stream [Rest(0.125);Rest(0.125);Note((F,2),0.125,60);Note((E,
 
 let mozart = pair bass treble;;
 
-output_midi "mozart.mid" 200 mozart;;
+output_midi "mozart.mid" 202 mozart;;
 
 (*>* Problem 3.4 *>*)
 (* Then with just three lists ... *)
