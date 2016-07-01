@@ -284,7 +284,23 @@ let appendit =
  * replace Constant_e (Int 0) in increment_body with an exp that
  * implements a function that adds 1 to every element of a list
  *)
-let increment_body = Constant_e (Int 0);;  (* replace this! *)
+
+(* let rec increment = fun x -> match x with
+			        | Nil -> x
+			        | Cons(hd, tl) -> Cons(hd + 1, increment tl) in
+		       let xs = Cons(1, Cons(2, Nil)) in
+                       increment xs xs
+*)
+
+let increment_body : exp = 
+  Fun_e ("x", 
+    Match_e
+      (Var_e "x",
+        [(Data_p ("Nil",[]), Var_e "x");
+	 (Data_p ("Cons",[Var_p "hd"; Var_p "tl"]), 
+	   Data_e ("Cons", [Op_e (Var_e "hd", Plus, Constant_e (Int 1));
+			   FunCall_e (Var_e "increment", Var_e "tl")]))])) ;;
+
 let increment_all =
   Letrec_e ("increment_all", increment_body,
 	    FunCall_e (Var_e "increment_all", onetwo))
@@ -298,7 +314,7 @@ let eval_test (e:exp) : unit =
 ;;
 
 let test_exps = [onetwo; fact4; appendit];;
-  
+
 (* Use this to evaluate multiple expressions *)
 let eval_tests () = 
   List.iter eval_test test_exps

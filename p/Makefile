@@ -9,3 +9,6 @@ eval1: eval1.ml
 
 eval2: eval2.ml
 	ocamlc -o eval2 eval2.ml
+
+clean:
+	rm -rf *.cmo *.cmi eval *.native _build
