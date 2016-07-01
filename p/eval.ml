@@ -88,7 +88,7 @@ let substitute (v:exp) (x:variable) (e:exp) : exp =
     | Var_e y -> if x = y then v else e
     | Constant_e _ -> e
     | Op_e (e1,op,e2) -> Op_e(subst e1,op,subst e2)
-    | Data_e (d, es) -> unimplemented()
+    | Data_e (d, es) -> Data_e (d, (List.map (fun x -> subst x) es))
     | FunCall_e (e1,e2) -> FunCall_e(subst e1,subst e2)
     | Fun_e (y,e1) -> if x = y then e else Fun_e (y, subst e1)
     | Let_e (y,e1,e2) -> 
