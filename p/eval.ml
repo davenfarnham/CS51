@@ -57,6 +57,7 @@ exception UnboundVariable of variable ;;
 exception BadApplication of exp ;;
 exception BadOp of exp * operator * exp ;;
 exception BadMatch of exp ;;
+exception BadPattern of pattern ;;
 
 (* The only change here is that we use Data values to represent
  * true and false instead of built-in primitive boolean values. *)
@@ -82,20 +83,35 @@ let apply_op v1 op v2 =
  * of the guard.  
  *)
 
-let substitute (v:exp) (x:variable) (e:exp) : exp = 
+let rec substitute (v:exp) (x:variable) (e:exp) : exp = 
   let rec subst (e:exp) : exp = 
     match e with 
     | Var_e y -> if x = y then v else e
     | Constant_e _ -> e
     | Op_e (e1,op,e2) -> Op_e(subst e1,op,subst e2)
-    | Data_e (d, es) -> Data_e (d, (List.map (fun x -> subst x) es))
+    | Data_e (d, es) -> Data_e (d, (List.map (fun y -> subst y) es))
     | FunCall_e (e1,e2) -> FunCall_e(subst e1,subst e2)
     | Fun_e (y,e1) -> if x = y then e else Fun_e (y, subst e1)
     | Let_e (y,e1,e2) -> 
         Let_e (y, subst e1, if x = y then e2 else subst e2)
     | Letrec_e (y,e1,e2) -> 
         if x = y then Letrec_e (y,e1,e2) else Letrec_e (y,subst e1,subst e2)
-    | Match_e (e,ms) -> unimplemented()
+    | Match_e (e,ms) -> 
+        let e' = subst e in
+	  Match_e (e', List.map (fun y -> (match y with
+					   | (Constant_p c, ex) -> (Constant_p c, subst ex)
+					   | (Var_p x', ex) -> (Var_p x', subst (substitute v x ex))
+					   | (Data_p (c, lst), ex) -> (match c with
+								       | "Cons" -> (match lst with
+										    | (Var_p hd) :: [Var_p tl] -> if x = hd || x = tl then (Data_p (c, lst), ex)
+														  else (Data_p (c, lst), subst ex)
+										    | (Var_p hd) :: tl -> if x = hd then (Data_p (c, lst), ex)
+													  else (Data_p (c, lst), subst ex)		       
+										    | hd :: [Var_p tl] -> if x = tl then (Data_p (c, lst), ex)
+													  else (Data_p (c, lst), subst ex)
+										    | _ -> (Data_p (c, lst), subst ex))
+								       | _ -> (Data_p (c, lst), subst ex))
+					   | (Underscore_p, ex) -> (Underscore_p, subst ex))) ms)
   in 
     subst e
 ;;
