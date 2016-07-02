@@ -58,6 +58,7 @@ exception BadApplication of exp ;;
 exception BadOp of exp * operator * exp ;;
 exception BadMatch of exp ;;
 exception BadPattern of pattern ;;
+exception Error ;;
 
 (* The only change here is that we use Data values to represent
  * true and false instead of built-in primitive boolean values. *)
@@ -130,6 +131,12 @@ let rec substitute (v:exp) (x:variable) (e:exp) : exp =
 
  *)
 
+let flatten l = 
+  match l with
+  | [l'] -> l'
+  | _ -> raise Error
+;;
+
 let rec eval (e:exp) : exp = 
   match e with
     | Constant_e c -> Constant_e c 
@@ -168,9 +175,38 @@ and pattern_match (v:exp) (ms : (pattern * exp) list) : exp =
 		      | Constant_p c' -> if v = Constant_e c' then eval e'
 					 else pattern_match v tl 
 		      | Var_p v' -> eval (substitute v v' e')
-		      | Data_p (c', p') -> unimplemented()
+		      | Data_p (c', p') -> (match v with
+					    | Data_e (constr, exlst) -> if c' = constr && (p' = [] && exlst = []) then eval e'
+									else (if c' = constr then pattern_match (flatten exlst) (((flatten p'), e') :: tl)
+									      else pattern_match v tl)
+					    | _ -> pattern_match v tl)					    
 		      | Underscore_p -> eval e')
-;;        
+;;
+
+
+(*
+let increment_body : exp = 
+  Fun_e ("x", 
+    Match_e
+      (Var_e "x",
+        [(Data_p ("Nil",[]), Var_e "x");
+	 (Data_p ("Cons",[Var_p "hd"; Var_p "tl"]), 
+	   Data_e ("Cons", [Op_e (Var_e "hd", Plus, Constant_e (Int 1));
+			   FunCall_e (Var_e "increment", Var_e "tl")]))])) ;;
+
+            Let_e ("xs", onetwo, 
+                   FunCall_e (FunCall_e (Var_e "append", Var_e "xs"), 
+                              Var_e "xs"))) ;;
+
+let eval_test (e:exp) : unit =
+  Printf.printf "%s evaluates to %s\n"
+    (string_of_exp e) 
+    (string_of_exp (eval e))
+;;
+*)
+
+
+(* | Data_e of constructor * (exp list) *)
 
 (*
 and pattern = 
@@ -351,3 +387,30 @@ let test_exps = [onetwo; fact4; appendit];;
 let eval_tests () = 
   List.iter eval_test test_exps
 ;;
+
+(* let x = None in match x with
+		   | None -> 4 + 4
+		   | _ -> 4 ;; 	
+*)
+
+let match_none = Let_e("x", Data_e ("None", []),
+		   Match_e (Var_e "x", 
+		     [(Data_p ("None", []), Op_e (Constant_e (Int 4), Plus, Constant_e (Int 4)));
+		      (Underscore_p, Constant_e (Int 4))]))
+
+let match_some = Let_e("x", Data_e ("Some", [Constant_e (Int 4)]),
+		   Match_e (Var_e "x", 
+		     [(Data_p ("None", []), Op_e (Constant_e (Int 2), Plus, Constant_e (Int 2)));
+		      (Data_p ("Some", [Var_p "y"]), Op_e (Var_e "y", Plus, Var_e "y"));  
+		      (Underscore_p, Constant_e (Int 4))]))
+
+let match_bool = Let_e("y", Constant_e (Int 1),
+                   Let_e("x", Data_e ("true", []),
+		     Match_e (Var_e "x", 
+		       [(Data_p ("false", []), Op_e (Constant_e (Int 2), Plus, Constant_e (Int 2)));
+		        (Data_p ("true", []), Op_e (Var_e "y", Plus, Var_e "y"))])))
+
+let _ = 
+  eval_test match_none;
+  eval_test match_some;
+  eval_test match_bool
