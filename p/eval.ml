@@ -217,18 +217,6 @@ and pattern_match (v:exp) (ms : (pattern * exp) list) : exp =
 		      | Underscore_p -> eval e')
 ;;
 
-
-(* | Data_e of constructor * (exp list) *)
-
-(*
-and pattern = 
-  | Constant_p of constant
-  | Var_p of variable
-  | Data_p of constructor * (pattern list)
-  | Underscore_p
-;; 
-*)
-
 let const2string c = 
   match c with 
     | Int i -> string_of_int i
@@ -372,14 +360,14 @@ let appendit =
                        increment xs xs
 *)
 
-let increment_body : exp = 
+let increment_body = 
   Fun_e ("x", 
     Match_e
       (Var_e "x",
         [(Data_p ("Nil",[]), Var_e "x");
 	 (Data_p ("Cons",[Var_p "hd"; Var_p "tl"]), 
 	   Data_e ("Cons", [Op_e (Var_e "hd", Plus, Constant_e (Int 1));
-			   FunCall_e (Var_e "increment", Var_e "tl")]))])) ;;
+			   FunCall_e (Var_e "increment_all", Var_e "tl")]))])) ;;
 
 let increment_all =
   Letrec_e ("increment_all", increment_body,
@@ -393,7 +381,7 @@ let eval_test (e:exp) : unit =
     (string_of_exp (eval e))
 ;;
 
-let test_exps = [onetwo; fact4; appendit];;
+let test_exps = [onetwo; fact4; increment_all; appendit];;
 
 (* Use this to evaluate multiple expressions *)
 let eval_tests () = 
@@ -436,4 +424,5 @@ let _ =
   eval_test match_none;
   eval_test match_some;
   eval_test match_bool;
-  eval_test match_cons
+  eval_test match_cons;
+  eval_tests ()
