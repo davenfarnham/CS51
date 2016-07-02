@@ -100,7 +100,7 @@ let rec substitute (v:exp) (x:variable) (e:exp) : exp =
         let e' = subst e in
 	  Match_e (e', List.map (fun y -> (match y with
 					   | (Constant_p c, ex) -> (Constant_p c, subst ex)
-					   | (Var_p x', ex) -> (Var_p x', subst (substitute v x ex))
+					   | (Var_p x', ex) -> (Var_p x', subst (substitute v x ex)) (* might be redundant *)
 					   | (Data_p (c, lst), ex) -> (match c with
 								       | "Cons" -> (match lst with
 										    | (Var_p hd) :: [Var_p tl] -> if x = hd || x = tl then (Data_p (c, lst), ex)
@@ -162,8 +162,24 @@ let rec eval (e:exp) : exp =
  *
  *)
 and pattern_match (v:exp) (ms : (pattern * exp) list) : exp = 
-  unimplemented()
+  match ms with
+  | [] -> raise (BadMatch v)
+  | (p, e') :: tl -> (match p with
+		      | Constant_p c' -> if v = Constant_e c' then eval e'
+					 else pattern_match v tl 
+		      | Var_p v' -> eval (substitute v v' e')
+		      | Data_p (c', p') -> unimplemented()
+		      | Underscore_p -> eval e')
 ;;        
+
+(*
+and pattern = 
+  | Constant_p of constant
+  | Var_p of variable
+  | Data_p of constructor * (pattern list)
+  | Underscore_p
+;; 
+*)
 
 let const2string c = 
   match c with 
