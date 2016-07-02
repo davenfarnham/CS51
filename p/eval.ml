@@ -131,10 +131,42 @@ let rec substitute (v:exp) (x:variable) (e:exp) : exp =
 
  *)
 
-let flatten l = 
+(* take element out of list *)
+let head l = 
   match l with
-  | [l'] -> l'
+  | hd :: _ -> hd
   | _ -> raise Error
+;;
+
+let tail l = 
+  match l with
+  | _ :: tl -> tl
+  | _ -> raise Error
+;;
+
+(* inherent distrust of the List signatures *)
+let rec fold_right f acc l =
+  match l with
+  | [] -> acc
+  | hd :: tl -> fold_right f (f hd acc) tl
+;;
+
+let rec fold_left f u l =
+  match l with
+  | [] -> u
+  | hd :: tl -> f hd (fold_left f u tl)
+;;
+
+let rec inner item lst =
+  match lst with
+  | [] -> false
+  | hd :: tl -> (item = hd) || (inner item tl) 
+;;
+
+let rec dupl lst = 
+  match lst with
+  | [] -> false
+  | hd :: tl -> (inner hd tl) || dupl tl
 ;;
 
 let rec eval (e:exp) : exp = 
@@ -176,34 +208,14 @@ and pattern_match (v:exp) (ms : (pattern * exp) list) : exp =
 					 else pattern_match v tl 
 		      | Var_p v' -> eval (substitute v v' e')
 		      | Data_p (c', p') -> (match v with
-					    | Data_e (constr, exlst) -> if c' = constr && (p' = [] && exlst = []) then eval e'
-									else (if c' = constr then pattern_match (flatten exlst) (((flatten p'), e') :: tl)
-									      else pattern_match v tl)
+					    | Data_e (constr, exlst) -> 
+					        if c' = constr && (p' = [] && exlst = []) then eval e'
+						else (if c' = constr then pattern_match (Data_e (constr, (tail exlst)))
+											((Data_p (c', tail p'), pattern_match (head exlst) [((head p'), e')])  :: tl)
+						      else pattern_match v tl)
 					    | _ -> pattern_match v tl)					    
 		      | Underscore_p -> eval e')
 ;;
-
-
-(*
-let increment_body : exp = 
-  Fun_e ("x", 
-    Match_e
-      (Var_e "x",
-        [(Data_p ("Nil",[]), Var_e "x");
-	 (Data_p ("Cons",[Var_p "hd"; Var_p "tl"]), 
-	   Data_e ("Cons", [Op_e (Var_e "hd", Plus, Constant_e (Int 1));
-			   FunCall_e (Var_e "increment", Var_e "tl")]))])) ;;
-
-            Let_e ("xs", onetwo, 
-                   FunCall_e (FunCall_e (Var_e "append", Var_e "xs"), 
-                              Var_e "xs"))) ;;
-
-let eval_test (e:exp) : unit =
-  Printf.printf "%s evaluates to %s\n"
-    (string_of_exp e) 
-    (string_of_exp (eval e))
-;;
-*)
 
 
 (* | Data_e of constructor * (exp list) *)
@@ -410,7 +422,18 @@ let match_bool = Let_e("y", Constant_e (Int 1),
 		       [(Data_p ("false", []), Op_e (Constant_e (Int 2), Plus, Constant_e (Int 2)));
 		        (Data_p ("true", []), Op_e (Var_e "y", Plus, Var_e "y"))])))
 
+(* let x = [1;2] in match x with
+		    | [] -> 0
+		    | hd :: tl -> hd + hd
+*)
+
+let match_cons = Let_e("x", Data_e ("Cons", [Constant_e (Int 1); Data_e ("Cons", [Constant_e (Int 2); Data_e ("Nil", [])])]),
+		   Match_e (Var_e "x", 
+		     [(Data_p ("Nil", []), Constant_e (Int 0));
+		      (Data_p ("Cons", [Var_p "hd"; Var_p "tl"]), Op_e (Var_e "hd", Plus, Var_e "hd"))]))
+
 let _ = 
   eval_test match_none;
   eval_test match_some;
-  eval_test match_bool
+  eval_test match_bool;
+  eval_test match_cons
