@@ -79,6 +79,86 @@ let apply_op v1 op v2 =
     | _, _, _ -> raise (BadOp (v1,op,v2))
 ;;
 
+let const2string c = 
+  match c with 
+    | Int i -> string_of_int i
+;;
+
+let rec concats ss = 
+  match ss with 
+    | [] -> ""
+    | s::ss -> s ^ (concats ss)
+;;
+
+let rec sep s xs = 
+  match xs with 
+    | [] -> xs
+    | x::[] -> xs
+    | x::rest -> x::s::(sep s rest)
+;;
+
+let op2string op = 
+  match op with 
+    | Plus -> "+" | Minus -> "-" | Times -> "*" | Div -> "/" 
+    | LessThan -> "<" | LessThanEq -> "<=";;
+
+let precedence e = 
+  match e with 
+    | Constant_e _ -> 0
+    | Var_e _ -> 0
+    | Let_e (_,_,_) -> 10
+    | Letrec_e (_,_,_) -> 10
+    | Data_e (_,_) -> 10
+    | Match_e (_,_) -> 0
+    | Fun_e (_,_) -> 10
+    | FunCall_e (_,_) ->  3
+    | Op_e (_,Plus,_) -> 5
+    | Op_e (_,Minus,_) -> 5
+    | Op_e (_,Times,_) -> 3
+    | Op_e (_,Div,_) -> 3
+    | Op_e (_,LessThan,_) -> 7
+    | Op_e (_,LessThanEq,_) -> 7
+;;
+
+let rec pat2string p = 
+  match p with 
+    | Constant_p c -> const2string c
+    | Var_p x -> x
+    | Data_p (d,[]) -> d
+    | Data_p (d,ps) -> 
+        d ^ " (" ^ (concats (sep "," (List.map pat2string ps))) ^ ")"
+    | Underscore_p -> "_"
+;;
+
+let rec exp2string prec e = 
+  let p = precedence e in 
+  let s = 
+    match e with 
+      | Constant_e c -> const2string c
+      | Op_e (e1,op,e2) -> 
+          (exp2string p e1) ^ " "^(op2string op)^" "^(exp2string prec e2)
+      | Var_e x -> x
+      | Fun_e (x,e) -> "fun "^x^" -> "^(exp2string 10 e)
+      | FunCall_e (e1,e2) -> (exp2string p e1)^" "^(exp2string p e2)
+      | Let_e (x,e1,e2) -> "let "^x^" = "^(exp2string 10 e1)^" in "^
+          (exp2string prec e2)
+      | Letrec_e (x,e1,e2) -> "let rec "^x^" = "^(exp2string 10 e1)^" in "^
+          (exp2string prec e2)
+      | Data_e (d,[]) -> d
+      | Data_e (d,es) -> 
+          d ^ " (" ^ (concats (sep "," (List.map (exp2string 10) es))) ^ ")"
+      | Match_e (e,ms) -> 
+          "(match "^(exp2string 10 e)^" with "^
+          (concats (sep " | " (List.map (fun (p,e) -> 
+                                           (pat2string p) ^" -> "^
+                                             (exp2string 10 e)) ms))) ^ ")"
+  in 
+    if p > prec then "(" ^ s ^ ")" else s
+;;
+
+let string_of_exp e = exp2string 10 e ;;
+
+
 (* Substitution for match expressions is tricky, as we must make
  * sure to not substitute for x in a guard if x occurs in the pattern 
  * of the guard.  
@@ -203,98 +283,24 @@ let rec eval (e:exp) : exp =
 and pattern_match (v:exp) (ms : (pattern * exp) list) : exp = 
   match ms with
   | [] -> raise (BadMatch v)
-  | (p, e') :: tl -> (match p with
+  | (p, e') :: tl -> (*
+		     print_string ("pat: " ^ (pat2string p) ^ "\n"); print_string ("exp: " ^ (string_of_exp v) ^ "\n");
+		     print_string ("pat-exp: " ^ (string_of_exp e') ^ "\n"); *)
+		     (match p with
 		      | Constant_p c' -> if v = Constant_e c' then eval e'
 					 else pattern_match v tl 
-		      | Var_p v' -> eval (substitute v v' e')
+		      | Var_p v' -> substitute v v' e'
 		      | Data_p (c', p') -> (match v with
 					    | Data_e (constr, exlst) -> 
 					        if c' = constr && (p' = [] && exlst = []) then eval e'
 						else (if c' = constr then pattern_match (Data_e (constr, (tail exlst)))
-											((Data_p (c', tail p'), pattern_match (head exlst) [((head p'), e')])  :: tl)
+											((Data_p (c', tail p'), pattern_match (head exlst) 
+															     [(head p'), e']) :: tl)
 						      else pattern_match v tl)
 					    | _ -> pattern_match v tl)					    
 		      | Underscore_p -> eval e')
 ;;
 
-let const2string c = 
-  match c with 
-    | Int i -> string_of_int i
-;;
-
-let rec concats ss = 
-  match ss with 
-    | [] -> ""
-    | s::ss -> s ^ (concats ss)
-;;
-
-let rec sep s xs = 
-  match xs with 
-    | [] -> xs
-    | x::[] -> xs
-    | x::rest -> x::s::(sep s rest)
-;;
-
-let op2string op = 
-  match op with 
-    | Plus -> "+" | Minus -> "-" | Times -> "*" | Div -> "/" 
-    | LessThan -> "<" | LessThanEq -> "<=";;
-
-let precedence e = 
-  match e with 
-    | Constant_e _ -> 0
-    | Var_e _ -> 0
-    | Let_e (_,_,_) -> 10
-    | Letrec_e (_,_,_) -> 10
-    | Data_e (_,_) -> 10
-    | Match_e (_,_) -> 0
-    | Fun_e (_,_) -> 10
-    | FunCall_e (_,_) ->  3
-    | Op_e (_,Plus,_) -> 5
-    | Op_e (_,Minus,_) -> 5
-    | Op_e (_,Times,_) -> 3
-    | Op_e (_,Div,_) -> 3
-    | Op_e (_,LessThan,_) -> 7
-    | Op_e (_,LessThanEq,_) -> 7
-;;
-
-let rec pat2string p = 
-  match p with 
-    | Constant_p c -> const2string c
-    | Var_p x -> x
-    | Data_p (d,[]) -> d
-    | Data_p (d,ps) -> 
-        d ^ " (" ^ (concats (sep "," (List.map pat2string ps))) ^ ")"
-    | Underscore_p -> "_"
-;;
-
-let rec exp2string prec e = 
-  let p = precedence e in 
-  let s = 
-    match e with 
-      | Constant_e c -> const2string c
-      | Op_e (e1,op,e2) -> 
-          (exp2string p e1) ^ " "^(op2string op)^" "^(exp2string prec e2)
-      | Var_e x -> x
-      | Fun_e (x,e) -> "fun "^x^" -> "^(exp2string 10 e)
-      | FunCall_e (e1,e2) -> (exp2string p e1)^" "^(exp2string p e2)
-      | Let_e (x,e1,e2) -> "let "^x^" = "^(exp2string 10 e1)^" in "^
-          (exp2string prec e2)
-      | Letrec_e (x,e1,e2) -> "let rec "^x^" = "^(exp2string 10 e1)^" in "^
-          (exp2string prec e2)
-      | Data_e (d,[]) -> d
-      | Data_e (d,es) -> 
-          d ^ " (" ^ (concats (sep "," (List.map (exp2string 10) es))) ^ ")"
-      | Match_e (e,ms) -> 
-          "(match "^(exp2string 10 e)^" with "^
-          (concats (sep " | " (List.map (fun (p,e) -> 
-                                           (pat2string p) ^" -> "^
-                                             (exp2string 10 e)) ms))) ^ ")"
-  in 
-    if p > prec then "(" ^ s ^ ")" else s
-;;
-
-let string_of_exp e = exp2string 10 e ;;
 
 (* fun n -> match n < 1 with 0 -> 1 | n -> n * fact(n -1) *)
 let fact_body = Fun_e ("n", 
@@ -360,7 +366,7 @@ let appendit =
                        increment xs xs
 *)
 
-let increment_body = 
+let increment_body =
   Fun_e ("x", 
     Match_e
       (Var_e "x",
@@ -372,20 +378,6 @@ let increment_body =
 let increment_all =
   Letrec_e ("increment_all", increment_body,
 	    FunCall_e (Var_e "increment_all", onetwo))
-;;
-
-(* Use this for testing an expression's evaluation *)
-let eval_test (e:exp) : unit =
-  Printf.printf "%s evaluates to %s\n"
-    (string_of_exp e) 
-    (string_of_exp (eval e))
-;;
-
-let test_exps = [onetwo; fact4; increment_all; appendit];;
-
-(* Use this to evaluate multiple expressions *)
-let eval_tests () = 
-  List.iter eval_test test_exps
 ;;
 
 (* let x = None in match x with
@@ -420,9 +412,23 @@ let match_cons = Let_e("x", Data_e ("Cons", [Constant_e (Int 1); Data_e ("Cons",
 		     [(Data_p ("Nil", []), Constant_e (Int 0));
 		      (Data_p ("Cons", [Var_p "hd"; Var_p "tl"]), Op_e (Var_e "hd", Plus, Var_e "hd"))]))
 
-let _ = 
-  eval_test match_none;
-  eval_test match_some;
-  eval_test match_bool;
-  eval_test match_cons;
-  eval_tests ()
+let match_tail = Let_e("x", Data_e ("Cons", [Constant_e (Int 1); Data_e ("Cons", [Constant_e (Int 2); Data_e ("Nil", [])])]),
+		   Match_e (Var_e "x", 
+		     [(Data_p ("Nil", []), Constant_e (Int 0));
+		      (Data_p ("Cons", [Var_p "hd"; Var_p "tl"]), Var_e "tl")]))
+
+(* Use this for testing an expression's evaluation *)
+let eval_test (e:exp) : unit =
+  Printf.printf "%s evaluates to %s\n\n"
+    (string_of_exp e) 
+    (string_of_exp (eval e))
+;;
+
+let test_exps = [match_some; match_none; match_bool; match_cons; match_tail; onetwo; fact4; increment_all; appendit];;
+
+(* Use this to evaluate multiple expressions *)
+let eval_tests () = 
+  List.iter eval_test test_exps
+;;
+
+let _ = eval_tests ()
