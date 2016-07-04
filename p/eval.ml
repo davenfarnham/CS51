@@ -249,6 +249,14 @@ let rec dupl lst =
   | hd :: tl -> (inner hd tl) || dupl tl
 ;;
 
+(* might not matter for anything other than constants *)
+let match_type p e = 
+  match p with 
+  | Constant_p i -> (match e with
+		     | Constant_e i' -> if i = i' then true else false
+		     | _ -> false)
+  | _ -> true
+
 let rec eval (e:exp) : exp = 
   match e with
     | Constant_e c -> Constant_e c 
@@ -283,24 +291,23 @@ let rec eval (e:exp) : exp =
 and pattern_match (v:exp) (ms : (pattern * exp) list) : exp = 
   match ms with
   | [] -> raise (BadMatch v)
-  | (p, e') :: tl -> (*
-		     print_string ("pat: " ^ (pat2string p) ^ "\n"); print_string ("exp: " ^ (string_of_exp v) ^ "\n");
+  | (p, e') :: tl -> 
+(*		     print_string ("pat: " ^ (pat2string p) ^ "\n"); print_string ("exp: " ^ (string_of_exp v) ^ "\n");
 		     print_string ("pat-exp: " ^ (string_of_exp e') ^ "\n"); *)
 		     (match p with
-		      | Constant_p c' -> if v = Constant_e c' then eval e'
+		      | Constant_p c' -> if v = Constant_e c' then e'
 					 else pattern_match v tl 
 		      | Var_p v' -> substitute v v' e'
 		      | Data_p (c', p') -> (match v with
 					    | Data_e (constr, exlst) -> 
 					        if c' = constr && (p' = [] && exlst = []) then eval e'
-						else (if c' = constr then pattern_match (Data_e (constr, (tail exlst)))
-											((Data_p (c', tail p'), pattern_match (head exlst) 
-															     [(head p'), e']) :: tl)
+						else (if c' = constr && (match_type (head p') (head exlst)) 
+						      then pattern_match (Data_e (constr, (tail exlst)))
+									 ((Data_p (c', tail p'), pattern_match (head exlst) [(head p'), e']) :: tl)
 						      else pattern_match v tl)
 					    | _ -> pattern_match v tl)					    
 		      | Underscore_p -> eval e')
 ;;
-
 
 (* fun n -> match n < 1 with 0 -> 1 | n -> n * fact(n -1) *)
 let fact_body = Fun_e ("n", 
@@ -417,6 +424,22 @@ let match_tail = Let_e("x", Data_e ("Cons", [Constant_e (Int 1); Data_e ("Cons",
 		     [(Data_p ("Nil", []), Constant_e (Int 0));
 		      (Data_p ("Cons", [Var_p "hd"; Var_p "tl"]), Var_e "tl")]))
 
+(* let rec match_const x = match x with
+			   | [] -> 5
+			   | 1 :: tl -> 1 + match_const tl in
+			   | _ -> 2 
+   match_const [1;2]
+*)
+
+let match_const_body = Fun_e("x", 
+		         Match_e (Var_e "x", 
+		           [(Data_p ("Nil", []), Constant_e (Int 5));
+		            (Data_p ("Cons", [Constant_p (Int 1); Var_p "tl"]), Op_e (Constant_e (Int 1), Plus, FunCall_e (Var_e "match_const", Var_e "tl")));
+			    (Underscore_p, Constant_e (Int 2))]))
+
+let match_const = Letrec_e ("match_const", match_const_body,
+			    FunCall_e (Var_e "match_const", onetwo))
+
 (* Use this for testing an expression's evaluation *)
 let eval_test (e:exp) : unit =
   Printf.printf "%s evaluates to %s\n\n"
@@ -424,7 +447,7 @@ let eval_test (e:exp) : unit =
     (string_of_exp (eval e))
 ;;
 
-let test_exps = [match_some; match_none; match_bool; match_cons; match_tail; onetwo; fact4; increment_all; appendit];;
+let test_exps = [match_some; match_none; match_bool; match_cons; match_tail; match_const; onetwo; fact4; increment_all; appendit];;
 
 (* Use this to evaluate multiple expressions *)
 let eval_tests () = 
