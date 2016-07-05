@@ -1,3 +1,5 @@
+open Helpers
+
 (* This file extends our simple functional language evaluator with
  * support for datatypes and match-based pattern matching.  
  *)
@@ -161,7 +163,6 @@ let rec exp2string prec e =
 
 let string_of_exp e = exp2string 10 e ;;
 
-
 (* Substitution for match expressions is tricky, as we must make
  * sure to not substitute for x in a guard if x occurs in the pattern 
  * of the guard.  
@@ -210,24 +211,14 @@ let substitute (v:exp) (x:variable) (e:exp) : exp =
  * (any method you choose is fine)  EXPLAIN HERE BRIEFLY:
 
 
-
+   Raise UnboundVariable warning if duplicate pattern
 
 
  *)
 
-(* take element out of list *)
-let head l = 
-  match l with
-  | hd :: _ -> hd
-  | _ -> raise HeadError
-;;
+(* helper functions *)
 
-let tail l = 
-  match l with
-  | _ :: tl -> tl
-  | _ -> raise TailError
-;;
-
+(* flatten an expression list *)
 let flatten_e l = 
   match l with
   | [] -> Data_e ("Nil", [])
@@ -235,24 +226,12 @@ let flatten_e l =
   | _ -> raise ListError
 ;;
 
+(* flatten a pattern list *)
 let flatten_p l =
   match l with
   | [] -> Data_p ("Nil", [])
   | [hd] -> hd
   | _ -> raise ListError
-;;
-
-(* inherent distrust of the List signatures *)
-let rec fold_right f acc l =
-  match l with
-  | [] -> acc
-  | hd :: tl -> fold_right f (f hd acc) tl
-;;
-
-let rec fold_left f u l =
-  match l with
-  | [] -> u
-  | hd :: tl -> f hd (fold_left f u tl)
 ;;
 
 let rec inner item lst =
@@ -268,6 +247,7 @@ let rec dupl lst =
   | _ -> false
 ;;
 
+(* check for duplicate variable names in patterns *)
 let rec dupl_wrapper plst = 
   match plst with
   | (Data_p ("Cons", plst'), _) :: tl -> dupl plst' || dupl_wrapper tl
@@ -275,6 +255,18 @@ let rec dupl_wrapper plst =
   | _ -> false
 ;;
 
+(* When matching on patterns, [1;2] as an expression and as a pattern is different:
+
+	let x = match [1;2] in match x with
+		| hd :: tl -> hd + hd
+
+	exp: Data_e ("Cons", [Constant (Int 1); Data_e ("Cons", [Constant (Int 2); Data_e ("Nil", [])])])
+	pat: Data_p ("Cons", [hd; tl])
+
+   In pattern_match, you tack on a "Cons" s.t. you recursively call the function on Data_p ("Cons", [tl]] and
+   Data_e ("Cons", [Constant (Int 2); Data_e ("Nil", [])])]). Since you're doing this, you con't want to accidentally
+   tack on "Cons" too many times or onto a "Nil".
+*)
 let de_cons p = 
   match p with
   | Data_p ("Cons", [Data_p ("Cons", p')]) -> Data_p ("Cons", p')
@@ -288,7 +280,7 @@ let de_cons' e =
   | _ -> e
 ;;
 
-(* might not matter for anything other than constants *)
+(* check equivalence of constants in pattern *)
 let match_type p e = 
   match p with 
   | Constant_p i -> (match e with
@@ -337,12 +329,6 @@ and pattern_match (v:exp) (original:exp) (ms : (pattern * exp) list) : exp =
        | Constant_p c' -> if v = Constant_e c' then e' else pattern_match v original tl 
        | Var_p v' -> substitute v v' e'
        | Data_p (c', p') -> 
-
-(*
-       print_string ("pat: " ^ (pat2string p) ^ "\n"); print_string ("exp: " ^ (string_of_exp v) ^ "\n");
-       print_string ("pat-exp: " ^ (string_of_exp e') ^ "\n"); 
-*)
-
            (match v with
 	    | Data_e (constr, exlst) -> 
 	        (match (c' = constr, p', exlst) with
@@ -370,21 +356,7 @@ and pattern_match (v:exp) (original:exp) (ms : (pattern * exp) list) : exp =
        | Underscore_p -> eval e')
 ;;
 
-(*
-       print_string ("pat: " ^ (pat2string p) ^ "\n"); print_string ("exp: " ^ (string_of_exp v) ^ "\n");
-       print_string ("pat-exp: " ^ (string_of_exp e') ^ "\n"); 
-
-       | Data_p (c', p') -> (match v with
-			     | Data_e (constr, exlst) -> 
-			        if (c' = constr && (p' = [] && exlst = [])) || 
-				   (c' = "Nil" && (p' = [] && exlst = [])) ||
-				   (constr = "Nil" && (p' = [] && exlst = [])) then eval e'
-				else (if c' = constr && (match_type (head p') (head exlst)) 
-				      then pattern_match (flatten (tail exlst))
-							 ((de_cons (Data_p (c', tail p')), pattern_match (head exlst) [(head p'), e']) :: tl)
-				      else pattern_match v tl)
-			     | _ -> pattern_match v tl)					    
-*)
+(* testing *)
 
 (* fun n -> match n < 1 with 0 -> 1 | n -> n * fact(n -1) *)
 let fact_body = Fun_e ("n", 
@@ -474,11 +446,23 @@ let match_none = Let_e("x", Data_e ("None", []),
 		     [(Data_p ("None", []), Op_e (Constant_e (Int 4), Plus, Constant_e (Int 4)));
 		      (Underscore_p, Constant_e (Int 4))]))
 
+(* let x = Some 4 in match x with
+		     | None -> 2 + 2
+		     | Some y -> y + y
+		     | _ -> 4 ;; 	
+*)
+
 let match_some = Let_e("x", Data_e ("Some", [Constant_e (Int 4)]),
 		   Match_e (Var_e "x", 
 		     [(Data_p ("None", []), Op_e (Constant_e (Int 2), Plus, Constant_e (Int 2)));
 		      (Data_p ("Some", [Var_p "y"]), Op_e (Var_e "y", Plus, Var_e "y"));  
 		      (Underscore_p, Constant_e (Int 4))]))
+
+(* let y = 1 in 
+     let x = true in match x with
+		     | false -> 2 + 2
+		     | true -> y + y ;;
+*)
 
 let match_bool = Let_e("y", Constant_e (Int 1),
                    Let_e("x", Data_e ("true", []),
@@ -496,6 +480,11 @@ let match_cons = Let_e("x", Data_e ("Cons", [Constant_e (Int 1); Data_e ("Cons",
 		     [(Data_p ("Nil", []), Constant_e (Int 0));
 		      (Data_p ("Cons", [Var_p "hd"; Var_p "tl"]), Op_e (Var_e "hd", Plus, Var_e "hd"))]))
 
+(* let x = [1;2] in match x with
+		    | [] -> 0
+		    | hd :: tl -> tl
+*)
+
 let match_tail = Let_e("x", Data_e ("Cons", [Constant_e (Int 1); Data_e ("Cons", [Constant_e (Int 2); Data_e ("Nil", [])])]),
 		   Match_e (Var_e "x", 
 		     [(Data_p ("Nil", []), Constant_e (Int 0));
@@ -504,8 +493,8 @@ let match_tail = Let_e("x", Data_e ("Cons", [Constant_e (Int 1); Data_e ("Cons",
 (* let rec match_const x = match x with
 			   | [] -> 5
 			   | 1 :: tl -> 1 + match_const tl in
-			   | _ -> 2 
-   match_const [1;2]
+			   | _ -> 9
+   match_const [1;2] ;;
 *)
 
 let match_const_body = Fun_e("x", 
@@ -516,6 +505,11 @@ let match_const_body = Fun_e("x",
 
 let match_const = Letrec_e ("match_const", match_const_body,
 			    FunCall_e (Var_e "match_const", onetwo))
+
+(* 
+ * Reverse lists. Just a slightly more complex test than 
+ * the ones above.
+ *)
 
 (* let helper = fun l -> 
      let rec append = fun x y -> match x with 
@@ -528,11 +522,11 @@ let match_const = Letrec_e ("match_const", match_const_body,
      in reverse l
 *)
 
+(* [1;2;3] *)
 let onetwothree = Data_e("Cons", [Constant_e (Int 1); 
 				  Data_e("Cons", [Constant_e (Int 2);
 						  Data_e("Cons", [Constant_e (Int 3);
 								  Data_e("Nil", [])])])])
-;;
 
 let reverse_body = Fun_e("x", 
 	                 Match_e (Var_e "x", 
@@ -559,6 +553,11 @@ let app = Letrec_e("app", app_body, reverse)
 
 let helper = Let_e("l", onetwothree, app) 
 
+(* 
+ * Check that duplicate constants are ok, but not duplicate
+ * variables.
+ *) 
+
 (* let x = [1;1] in match x with
 		    | [] -> 0
 		    | 1 :: 1 :: tl -> 1 + 1
@@ -569,22 +568,35 @@ let match_dupl = Let_e("x", Data_e ("Cons", [Constant_e (Int 1); Data_e ("Cons",
 		     [(Data_p ("Nil", []), Constant_e (Int 0));
 		      (Data_p ("Cons", [Constant_p (Int 1); Constant_p (Int 1); Var_p "tl"]), Op_e (Constant_e (Int 1), Plus, Constant_e (Int 1)))]))
 
+(* 
+ * Pattern match should start evaluating pattern hd :: [], but
+ * should then switch to (1 :: 1 :: tl)
+ *)
+
+(* let x = [1;1] in match x with
+		    | [] -> 0
+		    | hd :: [] -> 0
+		    | 1 :: 1 :: tl -> 1 + 1
+*)
 let match_inc = Let_e("x", Data_e ("Cons", [Constant_e (Int 1); Data_e ("Cons", [Constant_e (Int 1); Data_e ("Nil", [])])]),
 		  Match_e (Var_e "x", 
 		    [(Data_p ("Nil", []), Constant_e (Int 0));
 		     (Data_p ("Cons", [Var_p "hd"; Data_p ("Nil", [])]), Constant_e (Int 0));
 		     (Data_p ("Cons", [Constant_p (Int 1); Constant_p (Int 1); Var_p "tl"]), Op_e (Constant_e (Int 1), Plus, Constant_e (Int 1)))]))
 
-let match_dupl_error = Let_e("x", Data_e ("Cons", [Constant_e (Int 1); Data_e ("Cons", [Constant_e (Int 1); Data_e ("Nil", [])])]),
-		         Match_e (Var_e "x", 
-		           [(Data_p ("Nil", []), Constant_e (Int 0));
-		            (Data_p ("Cons", [Var_p "hd"; Var_p "hd"]), Op_e (Var_e "hd", Plus, Var_e "hd"))]))
+(*
+ * This should raise a duplicate variable error
+ *)
 
 (* let x = [1;2] in match x with
                  | [] -> 0
-		 | hd :: [] -> hd 
-		 | hd :: hd' :: [] -> hd + hd'
+		 | hd :: hd' :: [] -> hd + hd
 *)
+
+let match_dupl_error = Let_e("x", Data_e ("Cons", [Constant_e (Int 1); Data_e ("Cons", [Constant_e (Int 2); Data_e ("Nil", [])])]),
+		         Match_e (Var_e "x", 
+		           [(Data_p ("Nil", []), Constant_e (Int 0));
+		            (Data_p ("Cons", [Var_p "hd"; Var_p "hd"]), Op_e (Var_e "hd", Plus, Var_e "hd"))]))
 
 (* Use this for testing an expression's evaluation *)
 let eval_test (e:exp) : unit =

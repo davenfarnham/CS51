@@ -1,5 +1,5 @@
 eval: eval.ml
-	ocamlc -o eval eval.ml
+	ocamlc -o eval helpers.ml eval.ml
 
 eval0: eval0.ml
 	ocamlc -o eval0 eval0.ml
