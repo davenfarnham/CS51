@@ -264,7 +264,7 @@ let rec dupl_wrapper plst =
 	pat: Data_p ("Cons", [hd; tl])
 
    In pattern_match, you tack on a "Cons" s.t. you recursively call the function on Data_p ("Cons", [tl]] and
-   Data_e ("Cons", [Constant (Int 2); Data_e ("Nil", [])])]). Since you're doing this, you con't want to accidentally
+   Data_e ("Cons", [Constant (Int 2); Data_e ("Nil", [])])]). Since you're doing this, you don't want to accidentally
    tack on "Cons" too many times or onto a "Nil".
 *)
 let de_cons p = 

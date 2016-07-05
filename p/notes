@@ -1,12 +1,12 @@
-lexical scoping
+- lexical scoping
 
-dynamic scoping
+- dynamic scoping
 
-closures
+- closures
 
-alpha conversion
+- alpha conversion
 
-substitution in match expressions
+- substitution in match expressions
 
 - pattern matching
 	- in the pattern match, if there's a constant 
