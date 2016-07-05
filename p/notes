@@ -1,0 +1,21 @@
+lexical scoping
+
+dynamic scoping
+
+closures
+
+alpha conversion
+
+substitution in match expressions
+
+- pattern matching
+	- in the pattern match, if there's a constant 
+	 in the pattern, if it matches the pattern in the 
+	 expression v pass on the expression e in the (p, e) 
+	 tuple.
+
+	- if the pattern = Data_p ("None", []) and v = Data_e ("None", [])
+	  then the constructors will match and the lists will be empty; 
+	  so go ahead and eval the expression e. (323)
+
+	- 

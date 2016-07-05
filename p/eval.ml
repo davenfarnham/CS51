@@ -58,7 +58,10 @@ exception BadApplication of exp ;;
 exception BadOp of exp * operator * exp ;;
 exception BadMatch of exp ;;
 exception BadPattern of pattern ;;
-exception Error ;;
+exception VariableBoundError
+exception HeadError ;;
+exception TailError ;;
+exception ListError ;;
 
 (* The only change here is that we use Data values to represent
  * true and false instead of built-in primitive boolean values. *)
@@ -164,7 +167,7 @@ let string_of_exp e = exp2string 10 e ;;
  * of the guard.  
  *)
 
-let rec substitute (v:exp) (x:variable) (e:exp) : exp = 
+let substitute (v:exp) (x:variable) (e:exp) : exp = 
   let rec subst (e:exp) : exp = 
     match e with 
     | Var_e y -> if x = y then v else e
@@ -179,20 +182,21 @@ let rec substitute (v:exp) (x:variable) (e:exp) : exp =
         if x = y then Letrec_e (y,e1,e2) else Letrec_e (y,subst e1,subst e2)
     | Match_e (e,ms) -> 
         let e' = subst e in
-	  Match_e (e', List.map (fun y -> (match y with
-					   | (Constant_p c, ex) -> (Constant_p c, subst ex)
-					   | (Var_p x', ex) -> (Var_p x', subst ex)
-					   | (Data_p (c, lst), ex) -> (match c with
-								       | "Cons" -> (match lst with
-										    | (Var_p hd) :: [Var_p tl] -> if x = hd || x = tl then (Data_p (c, lst), ex)
-														  else (Data_p (c, lst), subst ex)
-										    | (Var_p hd) :: tl -> if x = hd then (Data_p (c, lst), ex)
-													  else (Data_p (c, lst), subst ex)
-										    | hd :: [Var_p tl] -> if x = tl then (Data_p (c, lst), ex)
-													  else (Data_p (c, lst), subst ex)
-										    | _ -> (Data_p (c, lst), subst ex))
-								       | _ -> (Data_p (c, lst), subst ex))
-					   | (Underscore_p, ex) -> (Underscore_p, subst ex))) ms)
+	  Match_e (e', 
+	    List.map (fun y -> (match y with
+			        | (Constant_p c, ex) -> (Constant_p c, subst ex)
+			        | (Var_p x', ex) -> (Var_p x', subst ex)
+				| (Data_p (c, lst), ex) -> (match c with
+						            | "Cons" -> (match lst with
+								         | (Var_p hd) :: [Var_p tl] -> if x = hd || x = tl then (Data_p (c, lst), ex)
+											               else (Data_p (c, lst), subst ex)
+									 | (Var_p hd) :: tl -> if x = hd then (Data_p (c, lst), ex)
+											       else (Data_p (c, lst), subst ex)
+									 | hd :: [Var_p tl] -> if x = tl then (Data_p (c, lst), ex)
+											       else (Data_p (c, lst), subst ex)
+									 | _ -> (Data_p (c, lst), subst ex))
+						            | _ -> (Data_p (c, lst), subst ex))
+			       | (Underscore_p, ex) -> (Underscore_p, subst ex))) ms)
   in 
     subst e
 ;;
@@ -215,13 +219,27 @@ let rec substitute (v:exp) (x:variable) (e:exp) : exp =
 let head l = 
   match l with
   | hd :: _ -> hd
-  | _ -> raise Error
+  | _ -> raise HeadError
 ;;
 
 let tail l = 
   match l with
   | _ :: tl -> tl
-  | _ -> raise Error
+  | _ -> raise TailError
+;;
+
+let flatten_e l = 
+  match l with
+  | [] -> Data_e ("Nil", [])
+  | [hd] -> hd
+  | _ -> raise ListError
+;;
+
+let flatten_p l =
+  match l with
+  | [] -> Data_p ("Nil", [])
+  | [hd] -> hd
+  | _ -> raise ListError
 ;;
 
 (* inherent distrust of the List signatures *)
@@ -246,7 +264,28 @@ let rec inner item lst =
 let rec dupl lst = 
   match lst with
   | [] -> false
-  | hd :: tl -> (inner hd tl) || dupl tl
+  | Var_p hd :: tl -> (inner (Var_p hd) tl) || dupl tl
+  | _ -> false
+;;
+
+let rec dupl_wrapper plst = 
+  match plst with
+  | (Data_p ("Cons", plst'), _) :: tl -> dupl plst' || dupl_wrapper tl
+  | _ :: tl -> dupl_wrapper tl
+  | _ -> false
+;;
+
+let de_cons p = 
+  match p with
+  | Data_p ("Cons", [Data_p ("Cons", p')]) -> Data_p ("Cons", p')
+  | Data_p ("Cons", [Data_p ("Nil", p')]) -> Data_p ("Nil", p')
+  | _ -> p
+;;
+
+let de_cons' e = 
+  match e with
+  | Data_e ("Cons", [Data_e ("Cons", e')]) -> Data_e ("Cons", e')
+  | _ -> e
 ;;
 
 (* might not matter for anything other than constants *)
@@ -275,7 +314,9 @@ let rec eval (e:exp) : exp =
         let e1_unwind = substitute (Letrec_e (x,e1,Var_e x)) x e1 in 
           eval (Let_e (x,e1_unwind,e2))
     | Data_e (d,es) -> Data_e (d,List.map eval es)
-    | Match_e (e,ms) -> pattern_match (eval e) ms
+    | Match_e (e,ms) -> let m_exp = eval e in
+			  if not (dupl_wrapper ms) then eval (pattern_match m_exp m_exp ms)
+			  else raise (VariableBoundError)
 
 (* find the first branch that matches the value v.  
  * perform pattern matching and return an expression
@@ -288,23 +329,62 @@ let rec eval (e:exp) : exp =
  * raise (BadMatch v)
  *
  *)
-and pattern_match (v:exp) (ms : (pattern * exp) list) : exp = 
+and pattern_match (v:exp) (original:exp) (ms : (pattern * exp) list) : exp = 
   match ms with
   | [] -> raise (BadMatch v)
-  | (p, e') :: tl -> (match p with
-		      | Constant_p c' -> if v = Constant_e c' then e'
-					 else pattern_match v tl 
-		      | Var_p v' -> substitute v v' e'
-		      | Data_p (c', p') -> (match v with
-					    | Data_e (constr, exlst) -> 
-					        if c' = constr && (p' = [] && exlst = []) then eval e'
-						else (if c' = constr && (match_type (head p') (head exlst)) 
-						      then pattern_match (Data_e (constr, (tail exlst)))
-									 ((Data_p (c', tail p'), pattern_match (head exlst) [(head p'), e']) :: tl)
-						      else pattern_match v tl)
-					    | _ -> pattern_match v tl)					    
-		      | Underscore_p -> eval e')
+  | (p, e') :: tl -> 
+      (match p with
+       | Constant_p c' -> if v = Constant_e c' then e' else pattern_match v original tl 
+       | Var_p v' -> substitute v v' e'
+       | Data_p (c', p') -> 
+
+(*
+       print_string ("pat: " ^ (pat2string p) ^ "\n"); print_string ("exp: " ^ (string_of_exp v) ^ "\n");
+       print_string ("pat-exp: " ^ (string_of_exp e') ^ "\n"); 
+*)
+
+           (match v with
+	    | Data_e (constr, exlst) -> 
+	        (match (c' = constr, p', exlst) with
+		 (* case for None, true, false, and Nil *)
+		 | true, [], [] -> eval e'
+
+		 (* for data structures 'Some' and 'Cons' with non-empty lists *)		   			 
+		 | true, l, r -> 
+		     (match c', (match_type (head l) (head r)) with
+		      | "Some", true -> pattern_match (flatten_e (tail r)) original
+						      ((flatten_p (tail p'), pattern_match (head r) original [((head l), e')]) :: tl)
+		      | "Cons", true -> if List.length p' = 1 then pattern_match v original [(head l), e']
+					else let updated_exp = pattern_match (head r) original [((head l), e')] in
+					       pattern_match (flatten_e (tail r)) original 
+							     ((de_cons (Data_p (c', tail p')), updated_exp) :: tl)
+		      | "Some", false | "Cons", false -> pattern_match original original tl
+		      | _, _ -> pattern_match original original tl)
+
+		 (* for 'Cons' and 'Nil' *)
+		 | false, l, r ->
+		     (match (constr, c') with
+                      | "Nil", "Cons" -> pattern_match (flatten_e r) original [((head l), e')]
+		      | _ -> pattern_match original original tl)) 
+	    | _ -> pattern_match original original tl)					    
+       | Underscore_p -> eval e')
 ;;
+
+(*
+       print_string ("pat: " ^ (pat2string p) ^ "\n"); print_string ("exp: " ^ (string_of_exp v) ^ "\n");
+       print_string ("pat-exp: " ^ (string_of_exp e') ^ "\n"); 
+
+       | Data_p (c', p') -> (match v with
+			     | Data_e (constr, exlst) -> 
+			        if (c' = constr && (p' = [] && exlst = [])) || 
+				   (c' = "Nil" && (p' = [] && exlst = [])) ||
+				   (constr = "Nil" && (p' = [] && exlst = [])) then eval e'
+				else (if c' = constr && (match_type (head p') (head exlst)) 
+				      then pattern_match (flatten (tail exlst))
+							 ((de_cons (Data_p (c', tail p')), pattern_match (head exlst) [(head p'), e']) :: tl)
+				      else pattern_match v tl)
+			     | _ -> pattern_match v tl)					    
+*)
 
 (* fun n -> match n < 1 with 0 -> 1 | n -> n * fact(n -1) *)
 let fact_body = Fun_e ("n", 
@@ -473,11 +553,38 @@ let app_body =
         (Data_p ("Cons",[Var_p "hd"; Var_p "tl"]), 
          Data_e ("Cons", [Var_e "hd"; 
                           FunCall_e (FunCall_e (Var_e "app", Var_e "tl"),
-                                     Var_e "y")]))]))) ;;
+                                     Var_e "y")]))])))
 
 let app = Letrec_e("app", app_body, reverse)
 
-let helper = Let_e("l", onetwothree, app) ;;
+let helper = Let_e("l", onetwothree, app) 
+
+(* let x = [1;1] in match x with
+		    | [] -> 0
+		    | 1 :: 1 :: tl -> 1 + 1
+*)
+
+let match_dupl = Let_e("x", Data_e ("Cons", [Constant_e (Int 1); Data_e ("Cons", [Constant_e (Int 1); Data_e ("Nil", [])])]),
+		   Match_e (Var_e "x", 
+		     [(Data_p ("Nil", []), Constant_e (Int 0));
+		      (Data_p ("Cons", [Constant_p (Int 1); Constant_p (Int 1); Var_p "tl"]), Op_e (Constant_e (Int 1), Plus, Constant_e (Int 1)))]))
+
+let match_inc = Let_e("x", Data_e ("Cons", [Constant_e (Int 1); Data_e ("Cons", [Constant_e (Int 1); Data_e ("Nil", [])])]),
+		  Match_e (Var_e "x", 
+		    [(Data_p ("Nil", []), Constant_e (Int 0));
+		     (Data_p ("Cons", [Var_p "hd"; Data_p ("Nil", [])]), Constant_e (Int 0));
+		     (Data_p ("Cons", [Constant_p (Int 1); Constant_p (Int 1); Var_p "tl"]), Op_e (Constant_e (Int 1), Plus, Constant_e (Int 1)))]))
+
+let match_dupl_error = Let_e("x", Data_e ("Cons", [Constant_e (Int 1); Data_e ("Cons", [Constant_e (Int 1); Data_e ("Nil", [])])]),
+		         Match_e (Var_e "x", 
+		           [(Data_p ("Nil", []), Constant_e (Int 0));
+		            (Data_p ("Cons", [Var_p "hd"; Var_p "hd"]), Op_e (Var_e "hd", Plus, Var_e "hd"))]))
+
+(* let x = [1;2] in match x with
+                 | [] -> 0
+		 | hd :: [] -> hd 
+		 | hd :: hd' :: [] -> hd + hd'
+*)
 
 (* Use this for testing an expression's evaluation *)
 let eval_test (e:exp) : unit =
@@ -486,7 +593,10 @@ let eval_test (e:exp) : unit =
     (string_of_exp (eval e))
 ;;
 
-let test_exps = [match_some; match_none; match_bool; match_cons; match_tail; match_const; helper; onetwo; fact4; increment_all; appendit];;
+let test_exps = [match_some; match_none; match_bool; match_cons; 
+		 match_tail; match_const; helper; match_dupl; 
+		 onetwo; fact4; increment_all; appendit; 
+	         match_inc; match_dupl_error];; 
 
 (* Use this to evaluate multiple expressions *)
 let eval_tests () = 
