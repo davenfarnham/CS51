@@ -440,6 +440,48 @@ let match_const_body = Fun_e("x",
 let match_const = Letrec_e ("match_const", match_const_body,
 			    FunCall_e (Var_e "match_const", onetwo))
 
+(* let helper = fun l -> 
+     let rec append = fun x y -> match x with 
+			         | [] -> y
+			         | hd :: tl -> hd :: (append tl y) in
+
+     let rec reverse = fun x -> match x with
+		                | [] -> []
+		                | hd :: tl -> append (reverse tl) [hd]
+     in reverse l
+*)
+
+let onetwothree = Data_e("Cons", [Constant_e (Int 1); 
+				  Data_e("Cons", [Constant_e (Int 2);
+						  Data_e("Cons", [Constant_e (Int 3);
+								  Data_e("Nil", [])])])])
+;;
+
+let reverse_body = Fun_e("x", 
+	                 Match_e (Var_e "x", 
+		           [(Data_p ("Nil", []), Data_e ("Nil", []));
+		            (Data_p ("Cons", [Var_p "hd"; Var_p "tl"]), FunCall_e (FunCall_e (Var_e "app", 
+									           FunCall_e (Var_e "reverse", Var_e "tl")), 
+											      Data_e("Cons", [Var_e "hd"; Data_e("Nil", [])])))]))
+
+let reverse = Letrec_e ("reverse", reverse_body,
+			FunCall_e (Var_e "reverse", Var_e "l")) 
+
+let app_body = 
+  Fun_e ("x", 
+   Fun_e ("y", 
+    Match_e 
+      (Var_e "x", 
+       [(Data_p ("Nil",[]), Var_e "y") ;
+        (Data_p ("Cons",[Var_p "hd"; Var_p "tl"]), 
+         Data_e ("Cons", [Var_e "hd"; 
+                          FunCall_e (FunCall_e (Var_e "app", Var_e "tl"),
+                                     Var_e "y")]))]))) ;;
+
+let app = Letrec_e("app", app_body, reverse)
+
+let helper = Let_e("l", onetwothree, app) ;;
+
 (* Use this for testing an expression's evaluation *)
 let eval_test (e:exp) : unit =
   Printf.printf "%s evaluates to %s\n\n"
@@ -447,7 +489,7 @@ let eval_test (e:exp) : unit =
     (string_of_exp (eval e))
 ;;
 
-let test_exps = [match_some; match_none; match_bool; match_cons; match_tail; match_const; onetwo; fact4; increment_all; appendit];;
+let test_exps = [match_some; match_none; match_bool; match_cons; match_tail; match_const; helper; onetwo; fact4; increment_all; appendit];;
 
 (* Use this to evaluate multiple expressions *)
 let eval_tests () = 
