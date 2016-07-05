@@ -181,13 +181,13 @@ let rec substitute (v:exp) (x:variable) (e:exp) : exp =
         let e' = subst e in
 	  Match_e (e', List.map (fun y -> (match y with
 					   | (Constant_p c, ex) -> (Constant_p c, subst ex)
-					   | (Var_p x', ex) -> (Var_p x', subst (substitute v x ex)) (* might be redundant *)
+					   | (Var_p x', ex) -> (Var_p x', subst ex)
 					   | (Data_p (c, lst), ex) -> (match c with
 								       | "Cons" -> (match lst with
 										    | (Var_p hd) :: [Var_p tl] -> if x = hd || x = tl then (Data_p (c, lst), ex)
 														  else (Data_p (c, lst), subst ex)
 										    | (Var_p hd) :: tl -> if x = hd then (Data_p (c, lst), ex)
-													  else (Data_p (c, lst), subst ex)		       
+													  else (Data_p (c, lst), subst ex)
 										    | hd :: [Var_p tl] -> if x = tl then (Data_p (c, lst), ex)
 													  else (Data_p (c, lst), subst ex)
 										    | _ -> (Data_p (c, lst), subst ex))
@@ -291,10 +291,7 @@ let rec eval (e:exp) : exp =
 and pattern_match (v:exp) (ms : (pattern * exp) list) : exp = 
   match ms with
   | [] -> raise (BadMatch v)
-  | (p, e') :: tl -> 
-(*		     print_string ("pat: " ^ (pat2string p) ^ "\n"); print_string ("exp: " ^ (string_of_exp v) ^ "\n");
-		     print_string ("pat-exp: " ^ (string_of_exp e') ^ "\n"); *)
-		     (match p with
+  | (p, e') :: tl -> (match p with
 		      | Constant_p c' -> if v = Constant_e c' then e'
 					 else pattern_match v tl 
 		      | Var_p v' -> substitute v v' e'
@@ -435,7 +432,7 @@ let match_const_body = Fun_e("x",
 		         Match_e (Var_e "x", 
 		           [(Data_p ("Nil", []), Constant_e (Int 5));
 		            (Data_p ("Cons", [Constant_p (Int 1); Var_p "tl"]), Op_e (Constant_e (Int 1), Plus, FunCall_e (Var_e "match_const", Var_e "tl")));
-			    (Underscore_p, Constant_e (Int 2))]))
+			    (Underscore_p, Constant_e (Int 9))]))
 
 let match_const = Letrec_e ("match_const", match_const_body,
 			    FunCall_e (Var_e "match_const", onetwo))
