@@ -1,21 +1,66 @@
 - lexical scoping
+	- This happens normally through substituting. Substitute a value for a variable in an expression based on its closest 
+	  binding.
+
+	[1]	let x = 4 in 
+	[2]	  let f = fun y -> y + x in 
+	[3]	    let x = 3 in 
+	[4]	      f 3 ;; 		-> (* 7 *)
 
 - dynamic scoping
+	- Keep a mapping of variables -> values and update this mapping based on the latest binding.
+
+	[1]	let x = 4 in 
+	[2]	  let f = fun y -> y + x in 
+	[3]	    let x = 3 in
+	[4]	      f 3 ;; 		-> (* 6 *)
 
 - closures
+	- In closures, you basically keep track of the environment for functions. So, for example, in line [2], the closure
+	  would look something like: Closure (fun y -> y + x; [x = 4]) s.t. you keep track of the value for x at the time
+	  the function is declared. This will behave similar to how lexical scoping behaves and is how OCaml evaluates functions.
 
 - alpha conversion
+	- This is simply a technique where you rename all unique variables to clearly delineate exclusivity.
 
-- substitution in match expressions
+		let a = 4 in 
+		  let a = 3 in 
+		    let b = 2 + a in 
+		      let b = b + 3 in 
+	        	b ;;
+
+		let a = 4 in 
+		  let c = 3 in 
+		    let b = 2 + c in 
+		      let d = b + 3 in 
+			d ;; 		-> (* 8 *)
 
 - pattern matching
-	- in the pattern match, if there's a constant 
-	 in the pattern, if it matches the pattern in the 
-	 expression v pass on the expression e in the (p, e) 
-	 tuple.
+ 	- I think this was so hard simply because of all the cases to be considered. 
+	  I'm pretty sure I covered most cases, but I'm not 100%. (list of tests in eval.ml)
 
-	- if the pattern = Data_p ("None", []) and v = Data_e ("None", [])
-	  then the constructors will match and the lists will be empty; 
-	  so go ahead and eval the expression e. (323)
+	- I changed the signature for pattern_match to always include the original expression you're
+	  matching on. This is for cases like:
 
-	- 
+		let x = [1; 2; 3] in match x with 
+				     | [] -> 0 
+				     | hd :: [] -> hd 
+				     | hd :: hd' :: [] -> hd + hd' ;;
+
+	   where pattern_match will first match on (hd :: []) substituting 1 for hd in the expression (hd). When it 
+	   tries to match on [], however, it won't be able to. In this case, you want to continue iterating through the
+	   ((pattern * exp) list), but you want x to be the original [1;2;3] not the already partially iterated through [2;3].
+
+	- Another difficulty comes from the fact list patterns and list expression look substatially different. For example:
+
+		[hd; tl] ->
+				exp: Data_e("Cons", [Var_e "hd"; Data_e ("Cons", [Var_e "tl"; Data_e ("Nil", [])])])
+				pat: Data_p("Cons", [hd; tl])
+
+	  Dealing with these varying structures is why I came up with de_cons (), flatten (), etc. The way I handled matching
+	  was that is they both had a similar constructor, like "Cons", I would deal with the first term in the exp list and the
+          pat list. I would then recursively call the function on the tail of the list. This would cause an issue since the pat 
+	  would go from a: Data_p ("Cons", list) -> list. To deal with this, I tack on the constructor again s.t. I get the same
+	  structure in the recursive call. 
+
+	  This can, sometimes, cause incorrect syntax such as Data_p ("Cons", [Data_p ("Nil", [])]), which is handled in de_cons.

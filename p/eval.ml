@@ -187,16 +187,17 @@ let substitute (v:exp) (x:variable) (e:exp) : exp =
 	    List.map (fun y -> (match y with
 			        | (Constant_p c, ex) -> (Constant_p c, subst ex)
 			        | (Var_p x', ex) -> (Var_p x', subst ex)
-				| (Data_p (c, lst), ex) -> (match c with
-						            | "Cons" -> (match lst with
-								         | (Var_p hd) :: [Var_p tl] -> if x = hd || x = tl then (Data_p (c, lst), ex)
-											               else (Data_p (c, lst), subst ex)
-									 | (Var_p hd) :: tl -> if x = hd then (Data_p (c, lst), ex)
-											       else (Data_p (c, lst), subst ex)
-									 | hd :: [Var_p tl] -> if x = tl then (Data_p (c, lst), ex)
-											       else (Data_p (c, lst), subst ex)
-									 | _ -> (Data_p (c, lst), subst ex))
-						            | _ -> (Data_p (c, lst), subst ex))
+				| (Data_p (c, lst), ex) -> 
+				    (match c with
+				     | "Cons" -> (match lst with
+						  | (Var_p hd) :: [Var_p tl] -> if x = hd || x = tl then (Data_p (c, lst), ex)
+							                        else (Data_p (c, lst), subst ex)
+						  | (Var_p hd) :: tl -> if x = hd then (Data_p (c, lst), ex)
+									else (Data_p (c, lst), subst ex)
+						  | hd :: [Var_p tl] -> if x = tl then (Data_p (c, lst), ex)
+								        else (Data_p (c, lst), subst ex)
+						  | _ -> (Data_p (c, lst), subst ex))
+				     | _ -> (Data_p (c, lst), subst ex))
 			       | (Underscore_p, ex) -> (Underscore_p, subst ex))) ms)
   in 
     subst e
@@ -332,7 +333,7 @@ and pattern_match (v:exp) (original:exp) (ms : (pattern * exp) list) : exp =
            (match v with
 	    | Data_e (constr, exlst) -> 
 	        (match (c' = constr, p', exlst) with
-		 (* case for None, true, false, and Nil *)
+		 (* case for None, true, false, and both Nil *)
 		 | true, [], [] -> eval e'
 
 		 (* for data structures 'Some' and 'Cons' with non-empty lists *)		   			 
@@ -347,7 +348,7 @@ and pattern_match (v:exp) (original:exp) (ms : (pattern * exp) list) : exp =
 		      | "Some", false | "Cons", false -> pattern_match original original tl
 		      | _, _ -> pattern_match original original tl)
 
-		 (* for 'Cons' and 'Nil' *)
+		 (* for 'Cons' and 'Nil' mixed terms *)
 		 | false, l, r ->
 		     (match (constr, c') with
                       | "Nil", "Cons" -> pattern_match (flatten_e r) original [((head l), e')]
