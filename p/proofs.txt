@@ -67,7 +67,7 @@ Clearly justify each step of your proof.
 
 Proof:  By induction on the structure of the list xs.
 
-case xs == []:
+3case xs == []:
 
 To show: max (maxs []) (maxs ys) = (maxs (append [] ys))
 
@@ -77,10 +77,12 @@ Proof:
 
 	(2): max (min_int) (maxs ys)				(* eval -- [] is a value *) 
 
-	(3): max (min_int) (max_ys)				(* eval -- ys is valuable *)
+	(3): maxs ys						(* min_int *)
 
-	(4): max_ys						(* eval -- both min_int & max_ys are
-								   constant values; min_int *)
+	(4): maxs (append [] ys)				(* reverse eval append *)
+
+	(aside): append [] ys == ys				(* eval append *)
+	(aside): ys == append [] ys				(* symmetry *)
 
 case xs == hd::tail:
 
@@ -107,13 +109,23 @@ Part 2.4:
 
 (a) Prove that for all integer lists l, bump1 l == bump2 l.
 
-Proof: 
+case: l == []:
 
+to show: bump1 [] == bump2 []:
 
+proof:
 
+	(1): bump1 []
 
+	(2): []							(* eval bump1 -- [] is a value *)
 
+case: l == hd :: tail:
 
+IH: bump1 tail == bump2 tail
+
+to show: bump1 (hd :: tail) == bump2 (hd :: tail)
+
+proof: 
 
 (b) Prove that for all integer lists l, bump1 l == bump3 l.
 
