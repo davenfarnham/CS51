@@ -29,15 +29,32 @@ Part 2.2:
 --------
 
 Prove that for all a, b, c : complex,
-
 cadd a (cadd b c) == cadd (cadd a b) c
 
 Proof:
+	let cadd (b:complex) (c:complex) = 	(* equivalent to function online through alpha conversion *)
+	  let (b1, b2) = c1 in
+	  let (c1, c2) = c2 in 
+	    (b1 + c1, b2 + c2) ;;		
 
+	theorem: for complex numbers a, b, and c, cadd a (cadd b c) = cadd (cadd a b) c; i.e. the
+		 operation is associative.
 
+	cadd a (cadd b c) = 
+		         
+		(1): cadd a (b1 + c1, b2 + c2) 			(* eval *)
 
+		(2): (a1 + b1 + c1, a2 + b2 + c2) 		(* eval *)
 
+	cadd (cadd a b) c = 
 
+		(3): cadd (a1 + b1, a2 + b2) c 			(* eval *)
+
+		(4): (a1 + b1 + c1, a2 + b2 + c2)		(* eval *)
+
+		(5): (2) = (4)					(* math *)
+	
+		(6): cadd a (cadd b c) = cadd (cadd a b) c	(* reverse eval *)
 
 
 Part 2.3: 
