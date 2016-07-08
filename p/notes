@@ -64,3 +64,19 @@
 	  structure in the recursive call. 
 
 	  This can, sometimes, cause incorrect syntax such as Data_p ("Cons", [Data_p ("Nil", [])]), which is handled in de_cons.
+
+- proofs
+	- valuable
+		- a valuable expression is one that always terminates and produces a value
+
+	- total
+		- a total function is one that, when supplied with an argument, will terminate.
+
+	- partial
+		- a partial function is one that might (1) loop forever or (2) raise an exception
+
+	- a valuable expression will always produce a value. Therefore, all properties of values will
+	  also hold for valuable expressions (since these expressions are essentually values).
+
+	- induction: prove that the theorem works on the base case. prove that it works on any case -> case + 1.
+		     by induction, it should work on all cases.

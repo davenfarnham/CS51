@@ -11,17 +11,19 @@ For each of the following, either:
  * explain in a sentence why the named function is total, or
  * give a counter-example showing it is not total.
 
-(a) inc:
+(a) inc: let inc (x:int) : int = x + 1 ;; A total function since it will always terminate.
 
-(b) biginc:
+(b) biginc: let biginc x = x + max_int ;; A total function. This will overflow, but will still always return an int.
  
-(c) bigdiv:
+(c) bigdiv: let bigdiv x = max_int/x ;; Partial; possible division by zero.
 
-(d) search:
+(d) search: searching of a tree looks total.
 
-(e) twice:
+(e) twice: Partial -> let twice (f : int -> int) : int = f (f 0) ;; let f x = 10 / x ;; twice f (* error *)
 
-(f) gen:
+(f) gen: I think this is actually total. gen () will always return a function, which is a value. If you 
+	 were to call something like "gen () ()" then this will fail, but gen () will always return a value
+	 given an unit input.
 
 Part 2.2:
 --------
