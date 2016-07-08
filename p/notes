@@ -80,3 +80,37 @@
 
 	- induction: prove that the theorem works on the base case. prove that it works on any case -> case + 1.
 		     by induction, it should work on all cases.
+
+- todo
+	- why is it important to know when an expression is valuable?
+		- when you're substituting an expression into a function, you need to know that it's valuable. For 
+		  example, say you have a total function:
+
+			let inc (x:int) : int = x + 1 ;;
+
+		  this function will always terminate. When proving things, you'll frequently want to evaluate the
+		  function by passing in the parameter (in this case x) and using the resultant expression (x + 1).
+		  But this only works if the argument you are passing in is valuable (i.e. terminates). If not:
+
+			let rec forever () : int = forever () ;;
+
+			inc (forever ()) ;;	continuous loop =/= int
+
+		  you can't evaluate the expression (i.e. use x + 1 while further proving a theorem).
+
+	- reverse evaluation is proved by evaluation in one direction + symmetry.
+
+		let op a b c = (a + b) * c ;;
+
+		if I want to prove that (1 + 2) * 3 = op 1 2 3:		
+
+		(1 + 2) * 3 = 
+
+			(1) op 1 2 3 = (1 + 2) * 3 		(* eval *)
+			(2) (1 + 2) * 3 = op 1 2 3		(* symmetry; x = y then y = x *)
+
+			= op 1 2 3 
+
+		QED
+
+

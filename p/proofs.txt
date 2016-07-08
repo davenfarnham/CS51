@@ -69,24 +69,36 @@ Proof:  By induction on the structure of the list xs.
 
 case xs == []:
 
-To show:
+To show: max (maxs []) (maxs ys) = (maxs (append [] ys))
 
 Proof:
 
+	(1): max (maxs []) (maxs ys)
 
+	(2): max (min_int) (maxs ys)				(* eval -- [] is a value *) 
 
+	(3): max (min_int) (max_ys)				(* eval -- ys is valuable *)
 
-
+	(4): max_ys						(* eval -- both min_int & max_ys are
+								   constant values; min_int *)
 
 case xs == hd::tail:
 
-IH:   
+IH: max (maxs tail) (maxs ys) == (maxs (append tail ys)) (* assume base case is correct *)
 
-To show:   
+To show: max (maxs (hd :: tail)) (maxs ys) == maxs (append (hd :: tail) ys) (* prove the jump *)
 
 Proof:
 
+	(5): max (maxs (hd :: tail)) (maxs ys)
 
+	(6): max (max hd (maxs tail)) (maxs ys) 		(* eval maxs -- (hd :: tail) is valuable *)
+
+	(7): max hd (max (maxs tail) (maxs ys))			(* max associativity *)
+
+	(8): max hd (maxs (append tail ys))			(* IH *)
+
+	(9): maxs (append (hd :: tail) ys)			(* reverse eval maxs *)			
 
 QED!
 
