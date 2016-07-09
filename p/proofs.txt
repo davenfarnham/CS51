@@ -142,7 +142,7 @@ QED.
 
 (b) Prove that for all integer lists l, bump1 l == bump3 l.
 
-Proof:
+proof:
 
 case: l == []:
 
@@ -196,10 +196,71 @@ standard template for list proofs.
 
 (a) For all l : ('a * 'b) list, zip(unzip l) == l.
 
+case: l == []:
+
+to show: zip(unzip []) == []
+
+proof: 
+
+	(1): zip(unzip [])
+
+	(2): zip(([], []))					(* eval unzip -- [] is a value *)
+
+	(3): []							(* eval zip -- [] is a value *)
 
 
+case: l == (x, y) :: [(xs, ys)]:
 
+IH: zip(unzip [(xs, ys)]) == [(xs, ys)]
 
+to show: zip(unzip ((x, y) :: [(xs, ys)])) == (x, y) :: [(xs, ys)]
+
+proof:
+
+	(3): zip(unzip (x, y) :: [(xs, ys)])
+
+	(4): zip((x::[xs], y::[ys]))				(* eval unzip -- list is valuable *) 
+
+	(5): (x, y) :: zip ([xs], [ys])				(* eval zip -- list is valuable *)
+
+	(6): (x, y) :: zip (unzip [(xs, ys)])			(* reverse eval unzip *)
+
+	(7): (x, y) :: [(xs, ys)]				(* IH *)
+
+QED.
 
 
 (b) For all l1 : 'a list, l2 : 'b list, unzip(zip (l1,l2)) == (l1,l2).
+
+case: l1 == []; l2 == []:
+
+to show: unzip(zip([],[])) == ([], [])
+
+proof: 
+
+	(1): unzip(zip([],[]))
+
+	(2): unzip([]) 						(* eval zip - tuple is a value *)
+
+	(3): ([], [])						(* eval unzip *)
+
+
+case: l1 == hd1 :: tl1; l2 == hd2 :: tl2:
+
+IH: unzip(zip(tl1, tl2)) == (tl1, tl2)
+
+to show: unzip(zip(hd1 :: tl1, hd2 :: tl2)) == (hd1 :: tl1, hd2 :: tl2)
+
+proof:
+
+	(4): unzip(zip(hd1 :: tl1, hd2 :: tl2))
+
+	(5): unzip((hd1, hd2) :: zip (tl1, tl2))		(* eval zip -- lists are valuable *)
+
+	(6): let (xs, ys) = unzip(zip(tl1, tl2)) in		(* eval unzip -- all parameters are valuable *)
+	       (hd1::xs, hd2::ys)
+
+	(7): let (xs, ys) = (tl1, tl2) in			(* IH *)
+	       (hd1::xs, hd2::ys)
+
+	(8): (hd1::tl1, hd2::tl2)				(* alpha-equivalence *)
