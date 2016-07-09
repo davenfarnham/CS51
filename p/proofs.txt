@@ -111,7 +111,7 @@ Part 2.4:
 
 case: l == []:
 
-to show: bump1 [] == bump2 []:
+to show: bump1 [] == bump2 []
 
 proof:
 
@@ -119,29 +119,71 @@ proof:
 
 	(2): []							(* eval bump1 -- [] is a value *)
 
-case: l == hd :: tail:
+	(3): bump2 [] 						(* reverse eval bump2 *)
 
-IH: bump1 tail == bump2 tail
+
+case: l == hd :: tail:
 
 to show: bump1 (hd :: tail) == bump2 (hd :: tail)
 
 proof: 
 
+	(4): bump1 (hd :: tail) 
+
+	(5): map (fun x -> x + 1) (hd :: tail)			(* eval bump1 -- (hd :: tail) is valuable *)
+
+	(6): (fun x -> x + 1) hd :: map (fun x -> x + 1) tail   (* eval map -- f is total and (hd :: tail) valuable *)
+
+	(7): (hd + 1) :: map (fun x -> x + 1) tail		(* eval fun -- hd is valuable and fun total *)
+
+	(8): bump2 (hd :: tail)					(* reverse eval bump2 *)
+
+QED.
+
 (b) Prove that for all integer lists l, bump1 l == bump3 l.
 
 Proof:
 
+case: l == []:
+
+to show: bump1 [] == bump3 []
+
+proof: 
+
+	(1): bump1 [] 
+
+	(2): []							(* eval bump1 *)
+
+	(3): bump3 []						(* reverse eval bump3 *)
 
 
+case: hd :: tail:
 
+IH: bump1 tail == bump3 tail
 
+to show: bump1 (hd :: tail) == bump3 (hd :: tail)
 
+proof:
 
+	(4): bump1 (hd :: tail)
 
-(c) In one sentence, what's the big difference between parts (a) and (b)?
+	(5): map (fun x -> x + 1) (hd :: tail) 			(* eval bump1 -- (hd :: tail) is valuable *)
 
+	(6): (fun x -> x + 1) hd :: map (fun x -> x + 1) tail   (* eval map -- fun is total and list is valuable *)
 
+	(7): (hd + 1) :: map (fun x -> x + 1) tail		(* eval fun -- it's total and hd is valuable *)
 
+	(8): (hd + 1) :: bump1 tail				(* reverse eval bump1 *)
+
+	(9): (hd + 1) :: bump3 tail				(* IH *)
+
+	(10): bump3 (hd :: tail)				(* reverse eval bump3 *)
+
+QED.
+
+(c) In one sentence, what's the big difference between parts (a) and (b)? 
+
+You don't need to use an IH for part a.
 
 
 Part 2.5:
