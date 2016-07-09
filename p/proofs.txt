@@ -219,13 +219,16 @@ proof:
 
 	(3): zip(unzip (x, y) :: [(xs, ys)])
 
-	(4): zip((x::[xs], y::[ys]))				(* eval unzip -- list is valuable *) 
+	(4): zip(let (xs', ys') = unzip [(xs, ys)] in 		(* eval unzip -- list is valuable *)
+		   (x::xs', y::ys')
 
-	(5): (x, y) :: zip ([xs], [ys])				(* eval zip -- list is valuable *)
+	(5): zip(x::xs', y::ys')				(* unzip is total and lists are valuable *)
 
-	(6): (x, y) :: zip (unzip [(xs, ys)])			(* reverse eval unzip *)
+	(6): (x, y) :: zip (xs', ys')				(* eval zip *)
 
-	(7): (x, y) :: [(xs, ys)]				(* IH *)
+	(7): (x, y) :: zip(unzip[(xs, ys)])			(* congruence *)
+
+	(8): (x,y) :: [(xs, ys)]				(* IH *)
 
 QED.
 
@@ -264,3 +267,5 @@ proof:
 	       (hd1::xs, hd2::ys)
 
 	(8): (hd1::tl1, hd2::tl2)				(* alpha-equivalence *)
+
+QED.
