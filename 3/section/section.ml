@@ -251,10 +251,11 @@ let rec map2_ f lst1 lst2 =
 
 let map2 f lst1 lst2 = 
   (* zip the two lists *)
-  let rec zip (l1 : 'a list) (l2 : 'a list) : ('a * 'a) list= match (l1, l2) with
-                                                              | ([], []) -> []
-                                                              | ([], _) | (_, []) -> raise (Len_List "Unequal")
-		                                              | (hd :: tl, hd1 :: tl1) -> (hd, hd1) :: (zip tl tl1) in
+  let rec zip (l1 : 'a list) (l2 : 'a list) : ('a * 'a) list = 
+    match (l1, l2) with
+    | ([], []) -> []
+    | ([], _) | (_, []) -> raise (Len_List "Unequal")
+    | (hd :: tl, hd1 :: tl1) -> (hd, hd1) :: (zip tl tl1) in
   List.fold_right ~f:(fun x y -> let (l, r) = x in (f l r) :: y) ~init:[] (zip lst1 lst2)
 ;;
 
@@ -297,8 +298,7 @@ let filter_map (f: 'a -> 'b option) (lst: 'a list) : 'b list =
 
 
 (* Now write deoptionalize using this new filter_map *)
-let deoptionalize' (lst) = filter_map (fun x -> x) lst  
-;;
+let deoptionalize' (lst) = filter_map (fun x -> x) lst  ;;
 
 (* ******************* Part 42 - Substitution Model ******************* *)
 (* The purpose of these exercises is to help you develop a more formal
