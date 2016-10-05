@@ -73,32 +73,24 @@ let rec map f xs =
  * length lst returns the length of lst. length [] = 0. *)
 let length (lst: int list) : int =
   failwith "Not implemented"
-
-
 ;;
 
 (* 1b. Write a function that takes an int list and multiplies every int by 3.
  * Use map. *)
 let times_3 (lst: int list): int list =
   failwith "Not implemented"
-
-
 ;;
 
 (* 1c. Write a function that takes an int and an int list and multiplies every
  * entry in the list by the int. Use map. *)
 let times_x (x : int) (lst: int list): int list =
   failwith "Not implemented"
-
-
 ;;
 
 (* 1d. Rewrite times_3 in terms of times_x.
  * This should take very little code. *)
 let times_3_shorter =
   failwith "Not implemented"
-
-
 ;;
 
 (* 1e. Write a function that takes an int list and generates a "multiplication
@@ -106,8 +98,6 @@ let times_3_shorter =
  * list.  e.g. mult_table [1;2;3] => [[1; 2; 3]; [2; 4; 6]; [3; 6; 9]] *)
 let mult_table (lst: int list) : int list list =
   failwith "Not implemented"
-
-
 ;;
 
 (* 1f. Write a function that takes a list of boolean values
@@ -115,16 +105,12 @@ let mult_table (lst: int list) : int list list =
  * For simplicity, assume and_list [] is TRUE. Use fold_right. *)
 let and_list (lst: bool list) : bool =
   failwith "Not implemented"
-
-
 ;;
 
 (* 1g. Do the same as above, with OR.
  * Assume or_list [] is FALSE. *)
 let or_list (lst: bool list) : bool =
   failwith "Not implemented"
-
-
 ;;
 
 (* 1h.	 Write a function that takes a bool list list and returns
@@ -136,8 +122,6 @@ let or_list (lst: bool list) : bool =
  * You may find it helpful to use and_list and or_list. *)
 let cnf_list (lst: bool list list) : bool =
   failwith "Not implemented"
-
-
 ;;
 
 (* 1i. Write a function that takes an expr list and returns true if and only if
@@ -158,8 +142,6 @@ let rec eval (a:expr) : bool =
 
 let all_true (lst: expr list) : bool =
   failwith "Not implemented"
-
-
 ;;
 
 (* You may find these helper functions from section 1 helpful. *)
@@ -181,14 +163,10 @@ let and_option x y = calc_option (&&) x y ;;
  * where the empty list yields None. Use fold_right. *)
 let and_list_smarter (lst: bool list) : bool option =
   failwith "Not implemented"
-
-
 ;;
 
 let and_list_smarter' (lst: bool list) : bool option =
   failwith "Not implemented"
-
-
 ;;
 
 (* 1k. Write max_of_list from section 1:
