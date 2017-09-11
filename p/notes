@@ -51,7 +51,7 @@
 	   tries to match on [], however, it won't be able to. In this case, you want to continue iterating through the
 	   ((pattern * exp) list), but you want x to be the original [1;2;3] not the already partially iterated through [2;3].
 
-	- Another difficulty comes from the fact list patterns and list expression look substatially different. For example:
+	- Another difficulty comes from the fact list patterns and list expression look substantially different. For example:
 
 		[hd; tl] ->
 				exp: Data_e("Cons", [Var_e "hd"; Data_e ("Cons", [Var_e "tl"; Data_e ("Nil", [])])])
